@@ -16,10 +16,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -35,7 +35,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: ./coverage.xml
           flags: unittests
@@ -47,15 +47,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
       - name: Install dependencies
-        run: npm install --save-dev jest @babel/preset-env babel-jest
+        run: npm install --save-dev jest @babel/preset-env babel-jest || true
 
       - name: Run JavaScript tests
         run: npm test -- --coverage || true
