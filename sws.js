@@ -10,6 +10,8 @@ class SWSWebConsole {
         this.classes = ['main'];
         this.selectedClass = null;
         this.playingLine = null;
+        this.audioContext = null;
+        this.isPlaying = false;
 
         this.initializeUI();
         this.setupEventListeners();
@@ -143,8 +145,9 @@ snd("piano",4,G4);`;
             this.elements.stopBtn.disabled = false;
             this.consoleLog('Playing...', 'info');
 
-            // TODO: Connect to Web Audio Renderer
-            // playSWS(this.currentCode);
+            // Parse and play
+            this.playSWS();
+
         } catch (error) {
             this.consoleLog(`Play error: ${error.message}`, 'error');
             this.elements.playBtn.disabled = false;
@@ -160,9 +163,198 @@ snd("piano",4,G4);`;
         this.elements.stopBtn.disabled = true;
         this.consoleLog('Stopped', 'info');
         this.clearPlayHighlight();
+        this.stopPlayback();
+    }
 
-        // TODO: Connect to Web Audio Renderer
-        // stopSWS();
+    /**
+     * Play SWS code
+     */
+    playSWS() {
+        try {
+            // Initialize audio context
+            if (!this.audioContext) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.audioContext = new AudioContext();
+            }
+
+            this.isPlaying = true;
+
+            // Parse code
+            const events = this.parseCode(this.currentCode);
+            if (events.length === 0) {
+                this.consoleLog('No events found', 'warning');
+                this.handleStop();
+                return;
+            }
+
+            this.consoleLog(`Found ${events.length} events`, 'info');
+
+            // Schedule notes
+            let totalDuration = 0;
+            events.forEach((event, idx) => {
+                setTimeout(() => {
+                    if (!this.isPlaying) return;
+
+                    this.setPlayingLine(event.lineNumber);
+                    this.playNote(event);
+
+                    totalDuration = Math.max(totalDuration, event.startTime + event.duration);
+                }, event.startTime * 1000);
+            });
+
+            // Auto stop
+            setTimeout(() => {
+                if (this.isPlaying) {
+                    this.handleStop();
+                }
+            }, (totalDuration + 1) * 1000);
+
+        } catch (error) {
+            this.consoleLog(`Parse error: ${error.message}`, 'error');
+            this.handleStop();
+        }
+    }
+
+    /**
+     * Parse SWS code
+     */
+    parseCode(code) {
+        const events = [];
+        const lines = code.split('\n');
+        let currentTime = 0;
+        let tempo = 120;
+
+        lines.forEach((line, lineIdx) => {
+            line = line.trim();
+            if (!line || line.startsWith('<')) return;
+
+            // tempoconst
+            const tempoMatch = line.match(/tempoconst="([\d.]+)"/);
+            if (tempoMatch) {
+                tempo = parseFloat(tempoMatch[1]);
+            }
+
+            // snd statement
+            const sndMatch = line.match(/snd\("([^"]+)",(\d+),([A-Ga-g][#b]?\d+)/);
+            if (sndMatch) {
+                const instrument = sndMatch[1];
+                const length = parseInt(sndMatch[2]);
+                const pitch = sndMatch[3];
+
+                // Convert length to duration
+                const beatDuration = 4.0 / length;
+                const timeDuration = (beatDuration * 60) / tempo;
+
+                events.push({
+                    lineNumber: lineIdx,
+                    instrument: instrument,
+                    pitch: pitch,
+                    startTime: currentTime,
+                    duration: timeDuration,
+                });
+
+                currentTime += beatDuration * (60 / tempo);
+            }
+
+            // sleep statement
+            const sleepMatch = line.match(/sleep\((\d+)\)/);
+            if (sleepMatch) {
+                const length = parseInt(sleepMatch[1]);
+                const beatDuration = 4.0 / length;
+                currentTime += beatDuration * (60 / tempo);
+            }
+        });
+
+        return events;
+    }
+
+    /**
+     * Play a single note
+     */
+    playNote(event) {
+        try {
+            if (this.audioContext.state === 'suspended') {
+                this.audioContext.resume();
+            }
+
+            const midiNote = this.noteToMidi(event.pitch);
+            const frequency = this.midiToFrequency(midiNote);
+
+            const osc = this.audioContext.createOscillator();
+            const gain = this.audioContext.createGain();
+
+            osc.connect(gain);
+            gain.connect(this.audioContext.destination);
+
+            osc.type = this.getOscillatorType(event.instrument);
+            osc.frequency.value = frequency;
+
+            // Envelope
+            const now = this.audioContext.currentTime;
+            const duration = event.duration;
+            const attack = Math.min(0.02, duration * 0.15);
+            const release = Math.min(0.1, duration * 0.25);
+
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.3, now + attack);
+            gain.gain.setValueAtTime(0.3, now + duration - release);
+            gain.gain.linearRampToValueAtTime(0, now + duration);
+
+            osc.start(now);
+            osc.stop(now + duration);
+
+        } catch (error) {
+            console.warn('Note play error:', error);
+        }
+    }
+
+    /**
+     * Stop playback
+     */
+    stopPlayback() {
+        this.isPlaying = false;
+    }
+
+    /**
+     * Convert note to MIDI
+     */
+    noteToMidi(note) {
+        const noteTable = {
+            'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11,
+            'C#': 1, 'Db': 1,
+            'D#': 3, 'Eb': 3,
+            'F#': 6, 'Gb': 6,
+            'G#': 8, 'Ab': 8,
+            'A#': 10, 'Bb': 10,
+        };
+
+        const match = note.match(/([A-G][#b]?)(\d+)/);
+        if (!match) return 60;
+
+        const noteName = match[1];
+        const octave = parseInt(match[2]);
+
+        const semitone = noteTable[noteName] || 0;
+        return (octave + 1) * 12 + semitone;
+    }
+
+    /**
+     * Convert MIDI to frequency
+     */
+    midiToFrequency(midi) {
+        return 440 * Math.pow(2, (midi - 69) / 12);
+    }
+
+    /**
+     * Get oscillator type
+     */
+    getOscillatorType(instrument) {
+        const type = instrument.toLowerCase();
+        if (type.includes('sine')) return 'sine';
+        if (type.includes('square')) return 'square';
+        if (type.includes('triangle')) return 'triangle';
+        if (type.includes('saw')) return 'sawtooth';
+        return 'sine';
     }
 
     /**
