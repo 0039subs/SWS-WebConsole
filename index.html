@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWS web console</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-title">SWS web console</div>
+        <div class="header-buttons">
+            <button id="openBtn" class="btn">Open</button>
+            <button id="saveBtn" class="btn">Save</button>
+            <button id="playBtn" class="btn btn-primary">▶ Play</button>
+            <button id="stopBtn" class="btn btn-danger" disabled>■ Stop</button>
+        </div>
+    </header>
+
+    <!-- Hidden file input -->
+    <input type="file" id="fileInput" accept=".ss,.ust" style="display: none;">
+
+    <!-- Main container -->
+    <div class="main-container">
+        <!-- Classes panel -->
+        <aside class="classes-panel">
+            <div class="panel-header">Classes</div>
+            <div class="classes-list" id="classList">
+                <div class="class-item" data-class="main">
+                    <div class="class-dot"></div>
+                    <span>main</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Editor panel -->
+        <main class="editor-panel">
+            <div class="editor-wrapper">
+                <div class="editor-container">
+                    <div class="line-numbers" id="lineNumbers"></div>
+                    <div class="editor">
+                        <textarea id="codeEditor" spellcheck="false"></textarea>
+                        <div class="highlight-overlay" id="highlightOverlay"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Console panel -->
+    <footer class="console-panel">
+        <div class="panel-header">Console</div>
+        <div class="console-output" id="consoleOutput">
+            <div class="console-line">Ready.</div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="sws.js"></script>
+</body>
+</html>
