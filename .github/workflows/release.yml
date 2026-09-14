@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Get tag version
         id: tag
@@ -39,7 +39,7 @@ jobs:
             ## Installation
 
             ### Web Version
-            Visit: https://[your-username].github.io/[repo-name]/
+            Visit: https://neon-0039.github.io/SWS-WebConsole/
 
             ### Python Version
             ```bash
@@ -57,7 +57,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Create web bundle
         run: |
