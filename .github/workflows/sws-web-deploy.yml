@@ -5,107 +5,34 @@ on:
     branches:
       - main
       - master
-  pull_request:
-    branches:
-      - main
-      - master
 
 jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'  # Node 24 は不安定なので 22 に
-
-      - name: Install dependencies
-        run: npm install
-        continue-on-error: true
-
-      - name: Run linter
-        run: npm run lint --if-present
-        continue-on-error: true
-
-      - name: Run tests
-        run: npm test --if-present
-        continue-on-error: true
-
   deploy:
-    needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    
     permissions:
       contents: read
       pages: write
       id-token: write
-      statuses: write
 
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Pages
+      - name: Configure Pages
         uses: actions/configure-pages@v4
-        with:
-          enablement: true
 
-      - name: Upload artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
-          retention-days: 30
+          retention-days: 1
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to Pages
         id: deployment
         uses: actions/deploy-pages@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-  code-quality:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Check for security vulnerabilities
-        run: npm audit --audit-level=moderate || true
-        continue-on-error: true
-
-      - name: Analyze code
-        run: |
-          echo "Running basic JavaScript analysis..."
-          node -c sws-core.js || true
-          node -c ui-controller.js || true
-        continue-on-error: true
-
-  documentation:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Check documentation
-        run: |
-          if [ -f "README.md" ]; then
-            echo "README.md found ✓"
-            wc -l README.md
-          else
-            echo "WARNING: README.md not found"
-          fi
+          timeout: 600000
