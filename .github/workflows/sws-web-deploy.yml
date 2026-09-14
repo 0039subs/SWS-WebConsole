@@ -21,7 +21,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'  # Node 24 は不安定なので 22 に
 
       - name: Install dependencies
         run: npm install
@@ -44,6 +44,11 @@ jobs:
       contents: read
       pages: write
       id-token: write
+      statuses: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout code
@@ -51,15 +56,20 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
+        with:
+          enablement: true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
+          retention-days: 30
 
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   code-quality:
     runs-on: ubuntu-latest
@@ -71,7 +81,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
 
       - name: Check for security vulnerabilities
         run: npm audit --audit-level=moderate || true
