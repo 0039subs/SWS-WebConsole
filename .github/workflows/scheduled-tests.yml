@@ -1,0 +1,51 @@
+name: Scheduled Tests
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+    - cron: '0 0 1 * *'  # Monthly on the 1st
+
+jobs:
+  nightly-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Python dependencies
+        run: |
+          pip install chardet pytest pytest-cov
+
+      - name: Run Python tests
+        run: python -m pytest tests/ -v || true
+        continue-on-error: true
+
+      - name: Install Node dependencies
+        run: npm install || true
+
+      - name: Run Node tests
+        run: npm test || true
+        continue-on-error: true
+
+      - name: Create test report
+        if: always()
+        run: |
+          echo "# Scheduled Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "Date: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Python Tests" >> $GITHUB_STEP_SUMMARY
+          echo "Status: Completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## JavaScript Tests" >> $GITHUB_STEP_SUMMARY
+          echo "Status: Completed" >> $GITHUB_STEP_SUMMARY

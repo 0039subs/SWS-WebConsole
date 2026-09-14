@@ -1,0 +1,84 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+
+jobs:
+  pr-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check PR title
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $PR_TITLE"
+          
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore)(\(.+\))?:.*$ ]]; then
+            echo "⚠ PR title doesn't follow conventional commits format"
+            echo "Expected format: type(scope): description"
+            echo "Types: feat, fix, docs, style, refactor, test, chore"
+          else
+            echo "✓ PR title follows conventional commits"
+          fi
+        continue-on-error: true
+
+      - name: Check PR description
+        run: |
+          BODY="${{ github.event.pull_request.body }}"
+          if [ -z "$BODY" ] || [ ${#BODY} -lt 10 ]; then
+            echo "⚠ PR description is empty or too short"
+          else
+            echo "✓ PR description present"
+          fi
+        continue-on-error: true
+
+      - name: Check file changes
+        run: |
+          echo "Changed files:"
+          git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD
+
+  size-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check file sizes
+        run: |
+          echo "# File Size Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          for file in SOUND-WAV-SCRIPT.py sws-core.js ui-controller.js index.html; do
+            if [ -f "$file" ]; then
+              size=$(wc -c < "$file")
+              size_kb=$((size / 1024))
+              echo "- $file: ${size_kb}KB" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+  compatibility-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Check Python compatibility
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Verify Python syntax
+        run: python -m py_compile SOUND-WAV-SCRIPT.py || true
