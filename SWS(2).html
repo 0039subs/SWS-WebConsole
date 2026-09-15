@@ -2299,7 +2299,278 @@ window.addEventListener('beforeunload', (e) => {
     stopPlayback(true);
   }
 });
-</script>
 
+// ===== WAV EXPORT SYSTEM =====
+
+class WavExporter {
+  constructor(events, tempo, key) {
+    this.events = events;
+    this.tempo = tempo;
+    this.key = key;
+    this.sampleRate = 44100;
+    this.channels = 1;
+    this.bitsPerSample = 16;
+  }
+  
+  generateWav() {
+    // Calculate total duration
+    let maxEnd = 0;
+    this.events.forEach(ev => {
+      const end = ev.startSec + ev.duration;
+      if (end > maxEnd) maxEnd = end;
+    });
+    
+    if (maxEnd === 0) {
+      log('No events to render', 'error');
+      return null;
+    }
+    
+    const totalSamples = Math.floor(maxEnd * this.sampleRate) + 1;
+    const buffer = new Float32Array(totalSamples);
+    
+    log(`Rendering ${maxEnd.toFixed(2)}s audio (${totalSamples} samples)...`, 'info');
+    
+    // Render each event
+    this.events.forEach(ev => {
+      if (!ev.notes || ev.notes.length === 0) return;
+      
+      const startSample = Math.floor(ev.startSec * this.sampleRate);
+      const endSample = Math.floor((ev.startSec + ev.duration) * this.sampleRate);
+      const samplesCount = endSample - startSample;
+      
+      if (samplesCount <= 0) return;
+      
+      ev.notes.forEach(noteObj => {
+        if (!noteObj || noteObj.pitch === null) return;
+        
+        try {
+          const midi = noteToMidi(noteObj.pitch, this.key, noteObj.bypass);
+          const freq = midiToFreq(midi);
+          
+          for (let i = 0; i < samplesCount; i++) {
+            const sampleIdx = startSample + i;
+            if (sampleIdx >= totalSamples) break;
+            
+            const t = i / this.sampleRate;
+            
+            // Generate wave
+            let wave = this._generateWave(ev.instrument, freq, t);
+            
+            // Apply envelope
+            const envelope = this._calculateEnvelope(t, ev.duration);
+            wave *= envelope;
+            
+            // Mix into buffer
+            buffer[sampleIdx] += wave * 0.18;
+          }
+        } catch (err) {
+          console.warn('Note render error:', err);
+        }
+      });
+    });
+    
+    // Normalize
+    let peak = 0;
+    for (let i = 0; i < buffer.length; i++) {
+      const abs = Math.abs(buffer[i]);
+      if (abs > peak) peak = abs;
+    }
+    
+    if (peak > 0.95) {
+      const scale = 0.95 / peak;
+      for (let i = 0; i < buffer.length; i++) {
+        buffer[i] *= scale;
+      }
+    }
+    
+    log('Encoding WAV file...', 'info');
+    
+    // Convert to WAV
+    const wavData = this._encodeWav(buffer);
+    return wavData;
+  }
+  
+  _generateWave(instrument, frequency, t) {
+    const name = (instrument || '').toLowerCase();
+    const phase = 2 * Math.PI * frequency * t;
+    
+    if (name.includes('sine')) {
+      return Math.sin(phase);
+    } else if (name.includes('square')) {
+      return Math.sin(phase) >= 0 ? 1 : -1;
+    } else if (name.includes('triangle')) {
+      return (2 / Math.PI) * Math.asin(Math.sin(phase));
+    } else if (name.includes('saw')) {
+      return 2 * ((frequency * t) % 1) - 1;
+    } else if (name.includes('synth') || name.includes('lead')) {
+      return Math.sin(phase) + 0.35 * Math.sin(phase * 2);
+    } else if (name.includes('bass')) {
+      return Math.sin(phase) + 0.35 * Math.sin(phase * 0.5);
+    } else if (name.includes('piano') || name.includes('grand')) {
+      const f = frequency;
+      return (
+        Math.sin(2 * Math.PI * f * t) +
+        0.45 * Math.sin(2 * Math.PI * f * 2 * t) +
+        0.25 * Math.sin(2 * Math.PI * f * 3 * t) +
+        0.12 * Math.sin(2 * Math.PI * f * 4 * t)
+      ) * Math.exp(-1.8 * t);
+    } else if (name.includes('kick')) {
+      const f = frequency * (1 + 4 * Math.exp(-25 * t));
+      return Math.sin(2 * Math.PI * f * t) * Math.exp(-10 * t);
+    } else if (name.includes('snare')) {
+      return (
+        (Math.sin(2 * Math.PI * 200 * t) + Math.sin(2 * Math.PI * 300 * t)) *
+        Math.exp(-8 * t)
+      );
+    } else if (name.includes('hihat') || name.includes('hi_hat')) {
+      return (
+        (Math.sin(2 * Math.PI * 8000 * t) + Math.sin(2 * Math.PI * 12000 * t)) *
+        Math.exp(-20 * t)
+      );
+    } else if (name.includes('drum')) {
+      const f = frequency * (1 + 3 * Math.exp(-20 * t));
+      return Math.sin(2 * Math.PI * f * t) * Math.exp(-8 * t);
+    }
+    
+    return Math.sin(phase);
+  }
+  
+  _calculateEnvelope(t, duration) {
+    if (duration <= 0) return 0;
+    
+    const attack = Math.min(0.02, duration * 0.15);
+    const release = Math.min(0.1, duration * 0.25);
+    
+    if (t < attack) {
+      return t / attack;
+    }
+    
+    if (t > duration - release) {
+      return Math.max(0, (duration - t) / release);
+    }
+    
+    return 1;
+  }
+  
+  _encodeWav(buffer) {
+    const frameLength = buffer.length;
+    const numberOfChannels = 1;
+    const sampleRate = this.sampleRate;
+    const format = 1;
+    const bitDepth = this.bitsPerSample;
+    
+    const bytesPerSample = bitDepth / 8;
+    const blockAlign = numberOfChannels * bytesPerSample;
+    
+    const audioData = new Int16Array(frameLength);
+    const volume = 0.8;
+    
+    for (let i = 0; i < frameLength; i++) {
+      let sample = Math.max(-1, Math.min(1, buffer[i]));
+      audioData[i] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+    }
+    
+    const wavData = this._createWavBlob(
+      numberOfChannels,
+      sampleRate,
+      format,
+      bitDepth,
+      audioData
+    );
+    
+    return wavData;
+  }
+  
+  _createWavBlob(numChannels, sampleRate, format, bitDepth, audioData) {
+    const frameLength = audioData.length;
+    const bytesPerSample = bitDepth / 8;
+    const blockAlign = numChannels * bytesPerSample;
+    
+    const subChunk1Size = 16;
+    const subChunk2Size = frameLength * blockAlign;
+    const chunkSize = 36 + subChunk2Size;
+    
+    const headerBuffer = new ArrayBuffer(44);
+    const header = new DataView(headerBuffer);
+    
+    // RIFF header
+    header.setUint32(0, 0x52494646, true); // "RIFF"
+    header.setUint32(4, chunkSize, true);
+    header.setUint32(8, 0x57415645, true); // "WAVE"
+    
+    // fmt sub-chunk
+    header.setUint32(12, 0x666d7420, true); // "fmt "
+    header.setUint32(16, subChunk1Size, true);
+    header.setUint16(20, format, true);
+    header.setUint16(22, numChannels, true);
+    header.setUint32(24, sampleRate, true);
+    header.setUint32(28, sampleRate * blockAlign, true);
+    header.setUint16(32, blockAlign, true);
+    header.setUint16(34, bitDepth, true);
+    
+    // data sub-chunk
+    header.setUint32(36, 0x64617461, true); // "data"
+    header.setUint32(40, subChunk2Size, true);
+    
+    const wavBlob = new Blob([headerBuffer, audioData], { type: 'audio/wav' });
+    return wavBlob;
+  }
+}
+
+// ===== EXPORT WAV BUTTON =====
+const exportWavBtn = document.createElement('button');
+exportWavBtn.id = 'exportWavBtn';
+exportWavBtn.textContent = 'Export WAV';
+exportWavBtn.style.cssText = `
+  padding: 6px 10px;
+  font-size: 11px;
+  background: #1f8f1f;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: 8px;
+`;
+
+exportWavBtn.addEventListener('click', () => {
+  saveEditorToTrack();
+  const events = compileProjectImproved();
+  
+  if (!events.length) {
+    log('No events to export', 'error');
+    return;
+  }
+  
+  try {
+    const exporter = new WavExporter(events, Project.tempo, Project.key);
+    const wavBlob = exporter.generateWav();
+    
+    if (!wavBlob) {
+      log('Failed to generate WAV', 'error');
+      return;
+    }
+    
+    const url = URL.createObjectURL(wavBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sws-export-${Date.now()}.wav`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    log('WAV exported successfully', 'success');
+  } catch (err) {
+    log(`Export error: ${err.message}`, 'error');
+    console.error(err);
+  }
+});
+
+// Add to footer
+const footerActions = document.querySelector('.footer-actions');
+if (footerActions) {
+  footerActions.appendChild(exportWavBtn);
+}
+</script>
 </body>
 </html>
