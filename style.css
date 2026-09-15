@@ -521,3 +521,13 @@ textarea::-webkit-scrollbar-thumb:hover {
     opacity: 0.5;
     pointer-events: none;
 }
+/* --- Class badges and class-list right text --- */
+.class-list .class-item { position: relative; display: flex; align-items: center; gap: 8px; padding-right: 12px; }
+.class-list .class-item .class-lines { margin-left: auto; font-size: 12px; color: #bcd; }
+.class-item.selected { background-color: #123f5f; }
+
+.highlight-overlay .line-row { display:flex; align-items:center; justify-content:space-between; padding: 2px 8px; }
+.highlight-overlay .line-row.highlight-line { background: rgba(33,150,243,0.06); }
+.highlight-overlay .line-row.highlight-line.current { background: rgba(255,193,7,0.12); border-left: 3px solid #ffc107; padding-left: 5px; }
+.highlight-overlay .line-badge { display:inline-block; background:#2196f3; color:#fff; font-size:11px; padding:2px 6px; border-radius:12px; margin-left:6px; }
+.highlight-overlay .line-badges { margin-left: 8px; }
