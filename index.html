@@ -30,15 +30,49 @@ html, body {
 body {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   padding: 20px;
+  min-height: 100vh;
+}
+
+.language-switcher {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.lang-btn {
+  padding: 8px 12px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid #222;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.lang-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.lang-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
 }
 
 .container {
   max-width: 1000px;
   width: 100%;
   text-align: center;
+  margin-top: 40px;
 }
 
 h1 {
@@ -217,62 +251,79 @@ h1 {
   .btn {
     width: 100%;
   }
+  
+  .language-switcher {
+    position: static;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  
+  .container {
+    margin-top: 20px;
+  }
 }
 </style>
 </head>
 <body>
 
+<div class="language-switcher">
+  <button class="lang-btn active" data-lang="ja">日本語</button>
+  <button class="lang-btn" data-lang="en-US">English (US)</button>
+  <button class="lang-btn" data-lang="en-GB">English (UK)</button>
+  <button class="lang-btn" data-lang="de">Deutsch</button>
+</div>
+
 <div class="container">
-  <h1>🎵 SWS Web Console</h1>
-  <p class="subtitle">Sound Wave Script - Web-based Music Notation & Synthesis</p>
+  <h1 id="title">🎵 SWS Web Console</h1>
+  <p class="subtitle" id="subtitle">Sound Wave Script - Web-based Music Notation & Synthesis</p>
 
   <div class="description">
-    <h2>What is SWS?</h2>
-    <p>Sound Wave Script (SWS) is a powerful, browser-based music notation and synthesis tool. Write music in an intuitive scripting language and hear it play in real-time using Web Audio API.</p>
-    <p>Perfect for:</p>
+    <h2 id="desc-title">What is SWS?</h2>
+    <p id="desc-text">Sound Wave Script (SWS) is a powerful, browser-based music notation and synthesis tool. Write music in an intuitive scripting language and hear it play in real-time using Web Audio API.</p>
+    <p id="desc-perfect">Perfect for:</p>
     <ul>
-      <li>Composing and prototyping music</li>
-      <li>Learning music theory and synthesis</li>
-      <li>Converting between UST (UTAU) and standard formats</li>
-      <li>Creating polyrhythmic compositions with independent tracks</li>
+      <li id="desc-item1">Composing and prototyping music</li>
+      <li id="desc-item2">Learning music theory and synthesis</li>
+      <li id="desc-item3">Converting between UST (UTAU) and standard formats</li>
+      <li id="desc-item4">Creating polyrhythmic compositions with independent tracks</li>
     </ul>
   </div>
 
   <div class="features">
     <div class="feature">
-      <h3>🎼 Track System</h3>
-      <p>Manage multiple independent tracks with different instruments and timing. Perfect for polyphonic compositions.</p>
+      <h3 id="feat1-title">🎼 Track System</h3>
+      <p id="feat1-desc">Manage multiple independent tracks with different instruments and timing. Perfect for polyphonic compositions.</p>
     </div>
     <div class="feature">
-      <h3>🎹 Web Audio Playback</h3>
-      <p>Real-time synthesis using the Web Audio API. No plugins required - works in any modern browser.</p>
+      <h3 id="feat2-title">🎹 Web Audio Playback</h3>
+      <p id="feat2-desc">Real-time synthesis using the Web Audio API. No plugins required - works in any modern browser.</p>
     </div>
     <div class="feature">
-      <h3>📝 Intuitive Syntax</h3>
-      <p>Simple, readable scripting syntax for defining notes, timing, tempo, and more. Learn in minutes.</p>
+      <h3 id="feat3-title">📝 Intuitive Syntax</h3>
+      <p id="feat3-desc">Simple, readable scripting syntax for defining notes, timing, tempo, and more. Learn in minutes.</p>
     </div>
     <div class="feature">
-      <h3>🔄 UST Support</h3>
-      <p>Import UTAU UST files and convert them to SWS format. Export your compositions back to standard formats.</p>
+      <h3 id="feat4-title">🔄 UST Support</h3>
+      <p id="feat4-desc">Import UTAU UST files and convert them to SWS format. Export your compositions back to standard formats.</p>
     </div>
     <div class="feature">
-      <h3>🎵 Chords & Slurs</h3>
-      <p>Create complex musical expressions with chord syntax (fsn=[C4,E4,G4]) and note slurring.</p>
+      <h3 id="feat5-title">🎵 Chords & Slurs</h3>
+      <p id="feat5-desc">Create complex musical expressions with chord syntax (fsn=[C4,E4,G4]) and note slurring.</p>
     </div>
     <div class="feature">
-      <h3>💾 Save & Load</h3>
-      <p>Save your projects as .ss files, load UST files, and export your final compositions.</p>
+      <h3 id="feat6-title">💾 Save & Load</h3>
+      <p id="feat6-desc">Save your projects as .ss files, load UST files, and export your final compositions.</p>
     </div>
   </div>
 
   <div class="buttons">
-    <a href="SWS(2).html" class="btn btn-primary">▶ Launch Console</a>
-    <a href="#example" class="btn btn-secondary">View Example</a>
-    <a href="https://github.com/francium87arc-cyber/SWS" class="btn btn-secondary">GitHub</a>
+    <a href="SWS(2).html" class="btn btn-primary" id="btn-launch">▶ Launch Console</a>
+    <a href="#example" class="btn btn-secondary" id="btn-example">View Example</a>
+    <a href="https://github.com/neon-0039/SWS-WebConsole" class="btn btn-secondary" id="btn-github">GitHub</a>
   </div>
 
   <div class="code-example" id="example">
-    <h3>Quick Example</h3>
+    <h3 id="code-title">Quick Example</h3>
     <pre>tempoconst="120";
 key="C";
 
@@ -296,16 +347,201 @@ lp(4){
   </div>
 
   <div class="footer">
-    <p>© 2024 SWS Web Console | Version 0.2.0</p>
+    <p id="footer-copyright">© 2024 SWS Web Console | Version 0.2.0</p>
     <p>
-      <a href="https://github.com/francium87arc-cyber/SWS">GitHub Repository</a> | 
-      <a href="https://github.com/francium87arc-cyber/SWS/issues">Report Issues</a>
+      <a href="https://github.com/neon-0039/SWS-WebConsole" id="footer-repo">GitHub Repository</a> | 
+      <a href="https://github.com/neon-0039/SWS-WebConsole/issues" id="footer-issues">Report Issues</a>
     </p>
-    <p style="margin-top: 20px; font-size: 0.85em;">
+    <p style="margin-top: 20px; font-size: 0.85em;" id="footer-info">
       Built with Web Audio API | No dependencies | Fully open source
     </p>
   </div>
 </div>
+
+<script>
+// ===== MULTILINGUAL CONTENT =====
+const translations = {
+  'ja': {
+    'title': '🎵 SWS Web Console',
+    'subtitle': 'Sound Wave Script - ウェブベースの音楽記譜・合成ツール',
+    'desc-title': 'SWSについて',
+    'desc-text': 'Sound Wave Script (SWS) は、ブラウザベースの強力な音楽記譜・合成ツールです。直感的なスクリプト言語で音楽を書き、Web Audio APIを使ってリアルタイムで再生できます。',
+    'desc-perfect': '以下のような用途に最適です：',
+    'desc-item1': '音楽の作曲とプロトタイピング',
+    'desc-item2': '音楽理論と合成の学習',
+    'desc-item3': 'UST (UTAU) と標準フォーマット間の変換',
+    'desc-item4': '独立したトラックによるポリリズム作曲の作成',
+    'feat1-title': '🎼 トラックシステム',
+    'feat1-desc': '異なる楽器とタイミングを持つ複数の独立したトラックを管理します。ポリフォニック作曲に最適です。',
+    'feat2-title': '🎹 Web Audio再生',
+    'feat2-desc': 'Web Audio APIを使用したリアルタイム合成。プラグイン不要で、すべての最新ブラウザで動作します。',
+    'feat3-title': '📝 直感的な構文',
+    'feat3-desc': 'ノート、タイミング、テンポなどを定義するためのシンプルで読みやすいスクリプト構文。数分で習得できます。',
+    'feat4-title': '🔄 UST対応',
+    'feat4-desc': 'UTAU UST ファイルをインポートして SWS フォーマットに変換します。作曲を標準フォーマットにエクスポートできます。',
+    'feat5-title': '🎵 コード & スラー',
+    'feat5-desc': 'コード構文 (fsn=[C4,E4,G4]) とノートスラーで複雑な音楽表現を作成できます。',
+    'feat6-title': '💾 保存 & 読み込み',
+    'feat6-desc': 'プロジェクトを .ss ファイルとして保存し、UST ファイルを読み込み、作曲をエクスポートできます。',
+    'btn-launch': '▶ コンソールを起動',
+    'btn-example': '例を表示',
+    'btn-github': 'GitHub',
+    'code-title': 'クイック例',
+    'footer-copyright': '© 2024 SWS Web Console | バージョン 0.2.0',
+    'footer-repo': 'GitHub リポジトリ',
+    'footer-issues': '問題を報告',
+    'footer-info': 'Web Audio API で構築 | 依存関係なし | 完全オープンソース'
+  },
+  'en-US': {
+    'title': '🎵 SWS Web Console',
+    'subtitle': 'Sound Wave Script - Web-based Music Notation & Synthesis',
+    'desc-title': 'What is SWS?',
+    'desc-text': 'Sound Wave Script (SWS) is a powerful, browser-based music notation and synthesis tool. Write music in an intuitive scripting language and hear it play in real-time using Web Audio API.',
+    'desc-perfect': 'Perfect for:',
+    'desc-item1': 'Composing and prototyping music',
+    'desc-item2': 'Learning music theory and synthesis',
+    'desc-item3': 'Converting between UST (UTAU) and standard formats',
+    'desc-item4': 'Creating polyrhythmic compositions with independent tracks',
+    'feat1-title': '🎼 Track System',
+    'feat1-desc': 'Manage multiple independent tracks with different instruments and timing. Perfect for polyphonic compositions.',
+    'feat2-title': '🎹 Web Audio Playback',
+    'feat2-desc': 'Real-time synthesis using the Web Audio API. No plugins required - works in any modern browser.',
+    'feat3-title': '📝 Intuitive Syntax',
+    'feat3-desc': 'Simple, readable scripting syntax for defining notes, timing, tempo, and more. Learn in minutes.',
+    'feat4-title': '🔄 UST Support',
+    'feat4-desc': 'Import UTAU UST files and convert them to SWS format. Export your compositions back to standard formats.',
+    'feat5-title': '🎵 Chords & Slurs',
+    'feat5-desc': 'Create complex musical expressions with chord syntax (fsn=[C4,E4,G4]) and note slurring.',
+    'feat6-title': '💾 Save & Load',
+    'feat6-desc': 'Save your projects as .ss files, load UST files, and export your final compositions.',
+    'btn-launch': '▶ Launch Console',
+    'btn-example': 'View Example',
+    'btn-github': 'GitHub',
+    'code-title': 'Quick Example',
+    'footer-copyright': '© 2024 SWS Web Console | Version 0.2.0',
+    'footer-repo': 'GitHub Repository',
+    'footer-issues': 'Report Issues',
+    'footer-info': 'Built with Web Audio API | No dependencies | Fully open source'
+  },
+  'en-GB': {
+    'title': '🎵 SWS Web Console',
+    'subtitle': 'Sound Wave Script - Web-based Music Notation & Synthesis',
+    'desc-title': 'What is SWS?',
+    'desc-text': 'Sound Wave Script (SWS) is a powerful, browser-based music notation and synthesis tool. Write music in an intuitive scripting language and hear it play in real-time using Web Audio API.',
+    'desc-perfect': 'Perfect for:',
+    'desc-item1': 'Composing and prototyping music',
+    'desc-item2': 'Learning music theory and synthesis',
+    'desc-item3': 'Converting between UST (UTAU) and standard formats',
+    'desc-item4': 'Creating polyrhythmic compositions with independent tracks',
+    'feat1-title': '🎼 Track System',
+    'feat1-desc': 'Manage multiple independent tracks with different instruments and timing. Perfect for polyphonic compositions.',
+    'feat2-title': '🎹 Web Audio Playback',
+    'feat2-desc': 'Real-time synthesis using the Web Audio API. No plug-ins required - works in any modern browser.',
+    'feat3-title': '📝 Intuitive Syntax',
+    'feat3-desc': 'Simple, readable scripting syntax for defining notes, timing, tempo, and more. Learn in minutes.',
+    'feat4-title': '🔄 UST Support',
+    'feat4-desc': 'Import UTAU UST files and convert them to SWS format. Export your compositions back to standard formats.',
+    'feat5-title': '🎵 Chords & Slurs',
+    'feat5-desc': 'Create complex musical expressions with chord syntax (fsn=[C4,E4,G4]) and note slurring.',
+    'feat6-title': '💾 Save & Load',
+    'feat6-desc': 'Save your projects as .ss files, load UST files, and export your final compositions.',
+    'btn-launch': '▶ Launch Console',
+    'btn-example': 'View Example',
+    'btn-github': 'GitHub',
+    'code-title': 'Quick Example',
+    'footer-copyright': '© 2024 SWS Web Console | Version 0.2.0',
+    'footer-repo': 'GitHub Repository',
+    'footer-issues': 'Report Issues',
+    'footer-info': 'Built with Web Audio API | No dependencies | Fully open source'
+  },
+  'de': {
+    'title': '🎵 SWS Web Console',
+    'subtitle': 'Sound Wave Script - Webbasiertes Musiknotations- und Synthesewerkzeug',
+    'desc-title': 'Was ist SWS?',
+    'desc-text': 'Sound Wave Script (SWS) ist ein leistungsstarkes, browserbasiertes Musiknotations- und Synthesewerkzeug. Schreiben Sie Musik in einer intuitiven Skriptsprache und hören Sie sie in Echtzeit mit der Web Audio API wiedergeben.',
+    'desc-perfect': 'Perfekt für:',
+    'desc-item1': 'Komponieren und Prototyping von Musik',
+    'desc-item2': 'Erlernen von Musiktheorie und Synthese',
+    'desc-item3': 'Konvertierung zwischen UST (UTAU) und Standardformaten',
+    'desc-item4': 'Erstellung polyrhythmischer Kompositionen mit unabhängigen Spuren',
+    'feat1-title': '🎼 Spursystem',
+    'feat1-desc': 'Verwalten Sie mehrere unabhängige Spuren mit verschiedenen Instrumenten und Timing. Perfekt für polyphon Kompositionen.',
+    'feat2-title': '🎹 Web Audio Wiedergabe',
+    'feat2-desc': 'Echtzeitsynth mit Web Audio API. Keine Plugins erforderlich - funktioniert in jedem modernen Browser.',
+    'feat3-title': '📝 Intuitive Syntax',
+    'feat3-desc': 'Einfache, lesbare Skriptsprache zur Definition von Noten, Timing, Tempo und mehr. In Minuten erlernen.',
+    'feat4-title': '🔄 UST-Unterstützung',
+    'feat4-desc': 'Importieren Sie UTAU UST-Dateien und konvertieren Sie diese in das SWS-Format. Exportieren Sie Ihre Kompositionen zurück in Standardformate.',
+    'feat5-title': '🎵 Akkorde & Bindungen',
+    'feat5-desc': 'Erstellen Sie komplexe musikalische Ausdrücke mit Akkordsyntax (fsn=[C4,E4,G4]) und Notenbindung.',
+    'feat6-title': '💾 Speichern & Laden',
+    'feat6-desc': 'Speichern Sie Ihre Projekte als .ss-Dateien, laden Sie UST-Dateien und exportieren Sie Ihre endgültigen Kompositionen.',
+    'btn-launch': '▶ Konsole starten',
+    'btn-example': 'Beispiel anzeigen',
+    'btn-github': 'GitHub',
+    'code-title': 'Schnellbeispiel',
+    'footer-copyright': '© 2024 SWS Web Console | Version 0.2.0',
+    'footer-repo': 'GitHub-Repository',
+    'footer-issues': 'Probleme melden',
+    'footer-info': 'Gebaut mit Web Audio API | Keine Abhängigkeiten | Vollständig quelloffen'
+  }
+};
+
+// ===== LANGUAGE SWITCHING =====
+function setLanguage(lang) {
+  // Update local storage
+  localStorage.setItem('swsLanguage', lang);
+  
+  // Update all text elements
+  Object.keys(translations[lang]).forEach(key => {
+    const element = document.getElementById(key);
+    if (element) {
+      element.textContent = translations[lang][key];
+    }
+  });
+  
+  // Update active button
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.querySelector(`[data-lang="${lang}"]`).classList.add('active');
+  
+  // Update HTML lang attribute
+  document.documentElement.lang = lang;
+}
+
+// ===== LANGUAGE BUTTON EVENT LISTENERS =====
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const lang = btn.getAttribute('data-lang');
+    setLanguage(lang);
+  });
+});
+
+// ===== INITIALIZATION =====
+window.addEventListener('load', () => {
+  // Get saved language or default to browser language
+  let savedLang = localStorage.getItem('swsLanguage');
+  
+  if (!savedLang) {
+    const browserLang = navigator.language || navigator.userLanguage;
+    
+    if (browserLang.startsWith('ja')) {
+      savedLang = 'ja';
+    } else if (browserLang.startsWith('de')) {
+      savedLang = 'de';
+    } else if (browserLang.startsWith('en-GB') || browserLang === 'en-GB') {
+      savedLang = 'en-GB';
+    } else if (browserLang.startsWith('en')) {
+      savedLang = 'en-US';
+    } else {
+      savedLang = 'en-US'; // Default fallback
+    }
+  }
+  
+  setLanguage(savedLang);
+});
+</script>
 
 </body>
 </html>
