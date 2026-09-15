@@ -1,31 +1,17 @@
 {
-  "name": "sws-web-console",
+  "name": "sws-webconsole",
   "version": "0.1.0",
-  "description": "Sound Wav Script Web Console - Browser-based SWS code editor and player",
-  "main": "index.html",
+  "description": "Web console for SWS (Sound Wav Script)",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 0",
-    "lint": "eslint . --ext .js || true",
-    "build": "echo \"Build completed\"",
-    "start": "npx http-server . -p 8080"
+    "start": "npx http-server ./web -p 8000 -c-1",
+    "lint": "eslint ./web/static || true",
+    "test": "echo \"No frontend tests defined\" && exit 0"
   },
-  "keywords": [
-    "sws",
-    "sound",
-    "music",
-    "web-audio",
-    "script"
-  ],
-  "author": "SWS Community",
-  "license": "MIT",
   "devDependencies": {
-    "eslint": "^8.50.0"
+    "http-server": "^14.1.1"
   },
   "engines": {
-    "node": ">=18.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/neon-0039/SWS-WebConsole.git"
+    "node": ">=16"
   }
 }
