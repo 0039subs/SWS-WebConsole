@@ -1,0 +1,45 @@
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+package-lock.json
+yarn.lock
+
+# Ruby / Jekyll
+.bundle/
+vendor/
+.sass-cache/
+_site/
+.jekyll-cache/
+
+# Build outputs
+dist/
+build/
+
+# Logs
+*.log
+
+# Local testing
+.env
+.env.local
+
+# Backup files
+*.bak
+*.backup
+
+# Temporary files
+*.tmp
+tmp/
+
+# IDE temp
+.git/
+.git-ignore
