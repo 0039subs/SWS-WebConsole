@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="SWS Web Console - Help & Documentation" />
+<meta name="theme-color" content="#0b0b0b" />
+<title>SWS Help - Documentation</title>
+<style>
+:root {
+  --bg: #0b0b0b;
+  --panel: #111;
+  --text: #e6eef8;
+  --accent: #2196f3;
+  --accent2: #ffc107;
+  --success: #9ef0a9;
+  --error: #ff9b9b;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.header h1 {
+  font-size: 2em;
+  background: linear-gradient(135deg, #2196f3, #21cbf3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.back-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.9em;
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.back-link:hover {
+  background: rgba(33, 150, 243, 0.1);
+}
+
+.language-switcher {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lang-btn {
+  padding: 8px 12px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid #222;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.lang-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.lang-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.container {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.toc {
+  background: var(--panel);
+  border: 1px solid #222;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 40px;
+}
+
+.toc h2 {
+  color: var(--accent);
+  margin-bottom: 15px;
+  font-size: 1.2em;
+}
+
+.toc ul {
+  list-style: none;
+}
+
+.toc li {
+  margin: 8px 0;
+}
+
+.toc a {
+  color: var(--accent);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.toc a:hover {
+  background: rgba(33, 150, 243, 0.1);
+}
+
+.accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.accordion-item {
+  background: var(--panel);
+  border: 1px solid #222;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.accordion-item:hover {
+  border-color: rgba(33, 150, 243, 0.3);
+}
+
+.accordion-header {
+  padding: 16px 20px;
+  background: linear-gradient(90deg, rgba(33, 150, 243, 0.05), transparent);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.accordion-header:hover {
+  background: linear-gradient(90deg, rgba(33, 150, 243, 0.1), transparent);
+}
+
+.accordion-header h3 {
+  color: var(--accent);
+  font-size: 1.1em;
+  margin: 0;
+}
+
+.accordion-toggle {
+  font-size: 1.5em;
+  color: var(--accent);
+  transition: transform 0.2s;
+}
+
+.accordion-item.active .accordion-toggle {
+  transform: rotate(180deg);
+}
+
+.accordion-content {
+  padding: 0 20px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+}
+
+.accordion-item.active .accordion-content {
+  max-height: 2000px;
+  padding: 0 20px 20px 20px;
+}
+
+.accordion-content p {
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.accordion-content h4 {
+  color: var(--accent2);
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.code-block {
+  background: #0a0a0a;
+  border: 1px solid #222;
+  padding: 12px;
+  border-radius: 4px;
+  margin: 12px 0;
+  overflow-x: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85em;
+  line-height: 1.5;
+  color: #a9d1ff;
+}
+
+.code-inline {
+  background: #0a0a0a;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #a9d1ff;
+}
+
+.table-wrapper {
+  margin: 12px 0;
+  overflow-x: auto;
+}
+
+.syntax-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #222;
+  font-size: 0.9em;
+}
+
+.syntax-table thead {
+  background: rgba(33, 150, 243, 0.1);
+}
+
+.syntax-table th,
+.syntax-table td {
+  padding: 10px;
+  border: 1px solid #222;
+  text-align: left;
+}
+
+.syntax-table th {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.syntax-table tr:hover {
+  background: rgba(33, 150, 243, 0.05);
+}
+
+.note {
+  background: rgba(255, 193, 7, 0.1);
+  border-left: 4px solid var(--accent2);
+  padding: 12px;
+  margin: 12px 0;
+  border-radius: 4px;
+}
+
+.note strong {
+  color: var(--accent2);
+}
+
+.warning {
+  background: rgba(255, 155, 155, 0.1);
+  border-left: 4px solid var(--error);
+  padding: 12px;
+  margin: 12px 0;
+  border-radius: 4px;
+}
+
+.warning strong {
+  color: var(--error);
+}
+
+.success {
+  background: rgba(158, 240, 169, 0.1);
+  border-left: 4px solid var(--success);
+  padding: 12px;
+  margin: 12px 0;
+  border-radius: 4px;
+}
+
+.success strong {
+  color: var(--success);
+}
+
+.list-style {
+  margin-left: 20px;
+  margin-bottom: 12px;
+}
+
+.list-style li {
+  margin: 6px 0;
+}
+
+.footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #222;
+  color: #9aa;
+  font-size: 0.9em;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .accordion-header h3 {
+    font-size: 1em;
+  }
+  
+  .syntax-table {
+    font-size: 0.8em;
+  }
+  
+  .syntax-table th,
+  .syntax-table td {
+    padding: 8px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1 id="page-title">📚 SWS Help & Documentation</h1>
+  <a href="index.html" class="back-link" id="back-link">← Back to Home</a>
+  <div class="language-switcher">
+    <button class="lang-btn active" data-lang="ja">日本語</button>
+    <button class="lang-btn" data-lang="en-US">English (US)</button>
+    <button class="lang-btn" data-lang="en-GB">English (UK)</button>
+    <button class="lang-btn" data-lang="de">Deutsch</button>
+  </div>
+</div>
+
+<div class="container">
+  
+  <div class="toc">
+    <h2 id="toc-title">Table of Contents</h2>
+    <ul>
+      <li><a href="#getting-started" id="toc-started">Getting Started</a></li>
+      <li><a href="#basic-syntax" id="toc-syntax">Basic Syntax</a></li>
+      <li><a href="#commands" id="toc-commands">Commands Reference</a></li>
+      <li><a href="#instruments" id="toc-instruments">Instruments</a></li>
+      <li><a href="#advanced" id="toc-advanced">Advanced Features</a></li>
+      <li><a href="#examples" id="toc-examples">Examples</a></li>
+      <li><a href="#faq" id="toc-faq">FAQ</a></li>
+    </ul>
+  </div>
+
+  <div class="accordion" id="accordion-container">
+    <!-- Accordion items will be generated by JavaScript -->
+  </div>
+
+</div>
+
+<div class="footer" id="footer">© 2024 SWS Web Console | Version 0.2.0</div>
+
+<script>
+// ===== HELP CONTENT IN MULTIPLE LANGUAGES =====
+const helpContent = {
+  'ja': {
+    'page-title': '📚 SWS ヘルプ & ドキュメント',
+    'back-link': '← ホームに戻る',
+    'toc-title': '目次',
+    'toc-started': 'はじめに',
+    'toc-syntax': '基本的な構文',
+    'toc-commands': 'コマンドリファレンス',
+    'toc-instruments': '楽器',
+    'toc-advanced': '高度な機能',
+    'toc-examples': '例',
+    'toc-faq': 'よくある質問',
+    'sections': [
+      {
+        'id': 'getting-started',
+        'title': '🚀 はじめに',
+        'content': `
+          <p>SWS Web Consoleへようこそ！このガイドでは、SWSの基本的な使い方を説明します。</p>
+          
+          <h4>最初のステップ</h4>
+          <ol class="list-style">
+            <li>SWS Web Consoleを開きます</li>
+            <li>コード エディタにコードを入力するか、既存の .ss または .ust ファイルを開きます</li>
+            <li>「▶ Play」ボタンをクリックして再生します</li>
+            <li>「Export WAV」ボタンで音声ファイルをダウンロードします</li>
+          </ol>
+          
+          <div class="note">
+            <strong>💡 ヒント：</strong> 初めてのコード例を試すには、コンソール内の初期コードをそのまま「Play」してみてください。
+          </div>
+          
+          <h4>ファイルの読み込み</h4>
+          <p>「Open」ボタンで以下のファイル形式に対応しています：</p>
+          <ul class="list-style">
+            <li>.ss - SWSスクリプト形式</li>
+            <li>.ust - UTAU Sequence Text形式</li>
+          </ul>
+        `
+      },
+      {
+        'id': 'basic-syntax',
+        'title': '📝 基本的な構文',
+        'content': `
+          <p>SWSはシンプルで読みやすいスクリプト言語です。すべてのステートメントはセミコロン (;) で終わります。</p>
+          
+          <h4>基本ルール</h4>
+          <ul class="list-style">
+            <li>すべてのコマンドはセミコロン (;) で終わります</li>
+            <li>コメントは &lt;...&gt; で囲みます</li>
+            <li>文字列は引用符 (" または ') で囲みます</li>
+            <li>コマンドは大文字小文字を区別しません</li>
+          </ul>
+          
+          <h4>コメント</h4>
+          <div class="code-block">&lt;これはコメントです&gt;
+snd("piano", 4, C4); &lt;ここもコメント&gt;</div>
+          
+          <h4>データ型</h4>
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr>
+                  <th>型</th>
+                  <th>例</th>
+                  <th>説明</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>数値</td>
+                  <td>120, 4.5, 8</td>
+                  <td>テンポ、長さなど</td>
+                </tr>
+                <tr>
+                  <td>文字列</td>
+                  <td>"piano", "C4"</td>
+                  <td>楽器、ノート名など</td>
+                </tr>
+                <tr>
+                  <td>配列</td>
+                  <td>[C4, E4, G4]</td>
+                  <td>fsn（複数ノート）で使用</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `
+      },
+      {
+        'id': 'commands',
+        'title': '⚙️ コマンドリファレンス',
+        'content': `
+          <h4>tempoconst - 初期テンポ設定</h4>
+          <p>ファイルの最初に使用します。1回のみ設定可能です。</p>
+          <div class="code-block">tempoconst="120";</div>
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr><th>パラメータ</th><th>型</th><th>説明</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>tempo</td><td>数値</td><td>BPM（ビート/分）: 30-500</td></tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <h4>newtempo - テンポ変更</h4>
+          <p>現在のカーソル位置からテンポを変更します。複数回使用可能です。</p>
+          <div class="code-block">newtempo="150";</div>
+          
+          <h4>key - キー設定</h4>
+          <p>キーシグネチャーを設定します。音符は自動的にキーに合わせて補正されます。</p>
+          <div class="code-block">key="C";</div>
+          <p><strong>対応キー：</strong> C, G, D, A, E, B, F#, F, Bb, Eb, Ab, Db, Am, Em, Bm, F#m, C#m, G#m, Dm, Gm, Cm, Fm</p>
+          
+          <h4>snd - 音声再生</h4>
+          <p>音符を再生します。最もよく使うコマンドです。</p>
+          <div class="code-block">snd("piano", 4, C4);</div>
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr><th>パラメータ</th><th>型</th><th>説明</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>instrument</td><td>文字列</td><td>楽器名</td></tr>
+                <tr><td>length</td><td>数値</td><td>音の長さ（4=4分音符, 8=8分音符など）</td></tr>
+                <tr><td>pitch</td><td>文字列</td><td>ピッチ（C4, C#4, null など）</td></tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <h4>sleep - 休符</h4>
+          <p>指定されたビート数だけ沈黙します。</p>
+          <div class="code-block">sleep(4);</div>
+          
+          <h4>chips - チップの定義</h4>
+          <p>再利用可能なコードブロックを定義します。</p>
+          <div class="code-block">chips riff(){
+    snd("piano", 8, C4);
+    snd("piano", 8, E4);
+}</div>
+          
+          <h4>chips() - チップの呼び出し</h4>
+          <p>定義したチップを呼び出します。</p>
+          <div class="code-block">chips(riff);</div>
+          
+          <h4>lp - ループ</h4>
+          <p>コードブロックを指定回数繰り返します。</p>
+          <div class="code-block">lp(4){
+    snd("piano", 8, C4);
+}</div>
+          
+          <h4>-cnt- - 同時実行</h4>
+          <p>複数の snd() コマンドを同じ時間に実行します。</p>
+          <div class="code-block">snd("piano", 4, C4)-cnt-snd("bass", 4, C2);</div>
+        `
+      },
+      {
+        'id': 'instruments',
+        'title': '🎹 楽器',
+        'content': `
+          <p>SWSは以下の楽器をサポートしています。</p>
+          
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr><th>カテゴリ</th><th>楽器名</th><th>説明</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>ピアノ</td><td>piano, grand_piano</td><td>クラシックなピアノ音</td></tr>
+                <tr><td>シンセ</td><td>synth, synth_lead, synth_bass</td><td>電子音楽用</td></tr>
+                <tr><td>ベース</td><td>bass</td><td>低周波ベース</td></tr>
+                <tr><td>ドラム</td><td>drum, kick, snare, hihat, hi_hat</td><td>パーカッション</td></tr>
+                <tr><td>波形</td><td>sine, square, triangle, saw, sawtooth</td><td>基本波形</td></tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="note">
+            <strong>💡 ヒント：</strong> 異なる楽器で同じメロディを試してみて、音の違いを聞き比べてください。
+          </div>
+        `
+      },
+      {
+        'id': 'advanced',
+        'title': '⭐ 高度な機能',
+        'content': `
+          <h4>コード（複数ノート）</h4>
+          <p>fsn=[] 構文を使ってコードを作成します。</p>
+          <div class="code-block">snd("piano", 4, fsn=[C4, E4, G4]);</div>
+          <p>すべてのノートは同時に再生されます。</p>
+          
+          <h4>スラー（Note Legato）</h4>
+          <p>ノート名の後に ~ を付けて、次の同じピッチのノートにつなぎます。</p>
+          <div class="code-block">snd("piano", 4, C4~);
+snd("piano", 4, C4);</div>
+          
+          <h4>キー補正のバイパス</h4>
+          <p>! を付けるとキー補正を無視します。</p>
+          <div class="code-block">key="C";
+snd("piano", 4, F#4!); &lt;F#はCキーに補正されない&gt;</div>
+          
+          <h4>複合修飾子</h4>
+          <p>スラーとバイパスを組み合わせられます。</p>
+          <div class="code-block">snd("piano", 4, C4~!); &lt;スラー＆バイパス&gt;</div>
+          
+          <h4>Lyric属性</h4>
+          <p>ノートに歌詞を付与します。UST出力時に使用されます。</p>
+          <div class="code-block">snd("piano", 4, C4, Lyric="あ");</div>
+          
+          <h4>Track（Class）</h4>
+          <p>複数のトラックを独立して管理します。</p>
+          <div class="code-block">snd("piano", 4, C4, class="melody");
+snd("bass", 4, C2, class="bass");</div>
+          
+          <div class="note">
+            <strong>💡 ヒント：</strong> WebコンソールではUIでTrackを管理でき、ファイル保存時に自動的にclass属性が追加されます。
+          </div>
+        `
+      },
+      {
+        'id': 'examples',
+        'title': '📖 例',
+        'content': `
+          <h4>例1: シンプルなメロディ</h4>
+          <div class="code-block">tempoconst="120";
+key="C";
+
+snd("piano", 4, C4);
+snd("piano", 4, D4);
+snd("piano", 4, E4);
+snd("piano", 4, F4);</div>
+          
+          <h4>例2: コード進行</h4>
+          <div class="code-block">tempoconst="120";
+key="C";
+
+snd("piano", 4, fsn=[C4, E4, G4]);
+snd("piano", 4, fsn=[F4, A4, C5]);
+snd("piano", 4, fsn=[G4, B4, D5]);
+snd("piano", 4, fsn=[C4, E4, G4]);</div>
+          
+          <h4>例3: ポリフォニック作曲</h4>
+          <div class="code-block">tempoconst="120";
+key="C";
+
+snd("piano", 4, C4, class="melody");
+snd("bass", 4, C2, class="bass");
+
+sleep(4);
+
+snd("piano", 4, E4, class="melody");
+snd("bass", 4, E2, class="bass");</div>
+          
+          <h4>例4: ループとチップ</h4>
+          <div class="code-block">tempoconst="120";
+
+chips pattern(){
+    snd("synth", 8, C4);
+    snd("synth", 8, E4);
+    snd("synth", 8, G4);
+}
+
+lp(4){
+    chips(pattern);
+}</div>
+          
+          <h4>例5: テンポ変更</h4>
+          <div class="code-block">tempoconst="120";
+
+snd("piano", 4, C4);
+snd("piano", 4, D4);
+
+newtempo="150";
+
+snd("piano", 4, E4);
+snd("piano", 4, F4);</div>
+        `
+      },
+      {
+        'id': 'faq',
+        'title': '❓ よくある質問',
+        'content': `
+          <h4>Q: 音が再生されません</h4>
+          <p><strong>A:</strong> 以下を確認してください：</p>
+          <ul class="list-style">
+            <li>ブラウザの音量がミュートになっていないか</li>
+            <li>ページが完全に読み込まれているか</li>
+            <li>コードにエラーがないか（コンソール出力を確認）</li>
+            <li>楽器名が正しいか</li>
+          </ul>
+          
+          <h4>Q: UST ファイルをインポートできません</h4>
+          <p><strong>A:</strong> 以下を確認してください：</p>
+          <ul class="list-style">
+            <li>ファイル拡張子が .ust であること</li>
+            <li>ファイルが標準的な UTAU フォーマットであること</li>
+            <li>文字エンコードが UTF-8 または Shift-JIS であること</li>
+          </ul>
+          
+          <h4>Q: 複数トラックの同期がうまくいきません</h4>
+          <p><strong>A:</strong> -cnt- を使って同時実行させてください：</p>
+          <div class="code-block">snd("piano", 4, C4)-cnt-snd("bass", 4, C2);</div>
+          
+          <h4>Q: エクスポートした WAV の品質を上げたいです</h4>
+          <p><strong>A:</strong> 現在は 44.1kHz で固定されていますが、ブラウザの設定やシステム設定で出力品質を変更できる場合があります。</p>
+          
+          <h4>Q: スラーがうまく機能しません</h4>
+          <p><strong>A:</strong> スラーの対象となるノートの以下を確認してください：</p>
+          <ul class="list-style">
+            <li>同じピッチであること</li>
+            <li>時間的に連続していること（前のノート終了後に開始）</li>
+            <li>~ の記号が付いていること</li>
+          </ul>
+          
+          <div class="warning">
+            <strong>⚠️ 注意：</strong> SWSはまだ開発中のツールです。予期しない動作や制限がある場合があります。
+          </div>
+          
+          <div class="success">
+            <strong>✅ サポート：</strong> 問題が発生した場合は、<a href="https://github.com/neon-0039/SWS-WebConsole/issues" style="color: var(--success);">GitHub Issues</a> で報告してください。
+          </div>
+        `
+      }
+    ]
+  },
+  'en-US': {
+    'page-title': '📚 SWS Help & Documentation',
+    'back-link': '← Back to Home',
+    'toc-title': 'Table of Contents',
+    'toc-started': 'Getting Started',
+    'toc-syntax': 'Basic Syntax',
+    'toc-commands': 'Commands Reference',
+    'toc-instruments': 'Instruments',
+    'toc-advanced': 'Advanced Features',
+    'toc-examples': 'Examples',
+    'toc-faq': 'FAQ',
+    'sections': [
+      {
+        'id': 'getting-started',
+        'title': '🚀 Getting Started',
+        'content': `
+          <p>Welcome to SWS Web Console! This guide will walk you through the basics of using SWS.</p>
+          
+          <h4>First Steps</h4>
+          <ol class="list-style">
+            <li>Open SWS Web Console</li>
+            <li>Type code in the editor or open an existing .ss or .ust file</li>
+            <li>Click the "▶ Play" button to play your composition</li>
+            <li>Click "Export WAV" to download the audio file</li>
+          </ol>
+          
+          <div class="note">
+            <strong>💡 Tip:</strong> Try the initial example code in the console and click Play to get started.
+          </div>
+          
+          <h4>File Formats Supported</h4>
+          <p>The "Open" button supports the following file formats:</p>
+          <ul class="list-style">
+            <li>.ss - SWS Script Format</li>
+            <li>.ust - UTAU Sequence Text Format</li>
+          </ul>
+        `
+      },
+      {
+        'id': 'basic-syntax',
+        'title': '📝 Basic Syntax',
+        'content': `
+          <p>SWS is a simple and readable scripting language. All statements end with a semicolon (;).</p>
+          
+          <h4>Basic Rules</h4>
+          <ul class="list-style">
+            <li>All commands end with a semicolon (;)</li>
+            <li>Comments are enclosed in &lt;...&gt;</li>
+            <li>Strings are enclosed in quotes (" or ')</li>
+            <li>Commands are case-insensitive</li>
+          </ul>
+          
+          <h4>Comments</h4>
+          <div class="code-block">&lt;This is a comment&gt;
+snd("piano", 4, C4); &lt;This is also a comment&gt;</div>
+          
+          <h4>Data Types</h4>
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Example</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Number</td>
+                  <td>120, 4.5, 8</td>
+                  <td>Tempo, length, etc.</td>
+                </tr>
+                <tr>
+                  <td>String</td>
+                  <td>"piano", "C4"</td>
+                  <td>Instrument, note name, etc.</td>
+                </tr>
+                <tr>
+                  <td>Array</td>
+                  <td>[C4, E4, G4]</td>
+                  <td>Used in fsn (multiple notes)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `
+      },
+      {
+        'id': 'commands',
+        'title': '⚙️ Commands Reference',
+        'content': `
+          <h4>tempoconst - Set Initial Tempo</h4>
+          <p>Use at the beginning of the file. Can only be set once.</p>
+          <div class="code-block">tempoconst="120";</div>
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>tempo</td><td>Number</td><td>BPM (Beats Per Minute): 30-500</td></tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <h4>newtempo - Change Tempo</h4>
+          <p>Change tempo from the current cursor position. Can be used multiple times.</p>
+          <div class="code-block">newtempo="150";</div>
+          
+          <h4>key - Set Key Signature</h4>
+          <p>Set the key signature. Notes are automatically corrected to match the key.</p>
+          <div class="code-block">key="C";</div>
+          <p><strong>Supported Keys:</strong> C, G, D, A, E, B, F#, F, Bb, Eb, Ab, Db, Am, Em, Bm, F#m, C#m, G#m, Dm, Gm, Cm, Fm</p>
+          
+          <h4>snd - Play Sound</h4>
+          <p>Play a note. The most frequently used command.</p>
+          <div class="code-block">snd("piano", 4, C4);</div>
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>instrument</td><td>String</td><td>Instrument name</td></tr>
+                <tr><td>length</td><td>Number</td><td>Note length (4=quarter note, 8=eighth note, etc.)</td></tr>
+                <tr><td>pitch</td><td>String</td><td>Pitch (C4, C#4, null, etc.)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <h4>sleep - Rest</h4>
+          <p>Silence for the specified number of beats.</p>
+          <div class="code-block">sleep(4);</div>
+          
+          <h4>chips - Define a Chip</h4>
+          <p>Define a reusable code block.</p>
+          <div class="code-block">chips riff(){
+    snd("piano", 8, C4);
+    snd("piano", 8, E4);
+}</div>
+          
+          <h4>chips() - Call a Chip</h4>
+          <p>Call a previously defined chip.</p>
+          <div class="code-block">chips(riff);</div>
+          
+          <h4>lp - Loop</h4>
+          <p>Repeat a code block a specified number of times.</p>
+          <div class="code-block">lp(4){
+    snd("piano", 8, C4);
+}</div>
+          
+          <h4>-cnt- - Simultaneous Execution</h4>
+          <p>Execute multiple snd() commands at the same time.</p>
+          <div class="code-block">snd("piano", 4, C4)-cnt-snd("bass", 4, C2);</div>
+        `
+      },
+      {
+        'id': 'instruments',
+        'title': '🎹 Instruments',
+        'content': `
+          <p>SWS supports the following instruments.</p>
+          
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr><th>Category</th><th>Instrument Name</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Piano</td><td>piano, grand_piano</td><td>Classic piano sound</td></tr>
+                <tr><td>Synth</td><td>synth, synth_lead, synth_bass</td><td>For electronic music</td></tr>
+                <tr><td>Bass</td><td>bass</td><td>Low frequency bass</td></tr>
+                <tr><td>Drums</td><td>drum, kick, snare, hihat, hi_hat</td><td>Percussion</td></tr>
+                <tr><td>Waveforms</td><td>sine, square, triangle, saw, sawtooth</td><td>Basic waveforms</td></tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="note">
+            <strong>💡 Tip:</strong> Try the same melody with different instruments to hear the differences.
+          </div>
+        `
+      },
+      {
+        'id': 'advanced',
+        'title': '⭐ Advanced Features',
+        'content': `
+          <h4>Chords (Multiple Notes)</h4>
+          <p>Create chords using the fsn=[] syntax.</p>
+          <div class="code-block">snd("piano", 4, fsn=[C4, E4, G4]);</div>
+          <p>All notes play simultaneously.</p>
+          
+          <h4>Slur (Note Legato)</h4>
+          <p>Append ~ to a note name to connect it to the next note of the same pitch.</p>
+          <div class="code-block">snd("piano", 4, C4~);
+snd("piano", 4, C4);</div>
+          
+          <h4>Bypass Key Correction</h4>
+          <p>Append ! to ignore key correction.</p>
+          <div class="code-block">key="C";
+snd("piano", 4, F#4!); &lt;F# is not corrected to C key&gt;</div>
+          
+          <h4>Combined Modifiers</h4>
+          <p>You can combine slur and bypass.</p>
+          <div class="code-block">snd("piano", 4, C4~!); &lt;Slur & Bypass&gt;</div>
+          
+          <h4>Lyric Attribute</h4>
+          <p>Add lyrics to notes. Used in UST export.</p>
+          <div class="code-block">snd("piano", 4, C4, Lyric="あ");</div>
+          
+          <h4>Tracks (Class)</h4>
+          <p>Manage multiple tracks independently.</p>
+          <div class="code-block">snd("piano", 4, C4, class="melody");
+snd("bass", 4, C2, class="bass");</div>
+          
+          <div class="note">
+            <strong>💡 Tip:</strong> In the Web Console, tracks are managed via UI and class attributes are automatically added when files are saved.
+          </div>
+        `
+      },
+      {
+        'id': 'examples',
+        'title': '📖 Examples',
+        'content': `
+          <h4>Example 1: Simple Melody</h4>
+          <div class="code-block">tempoconst="120";
+key="C";
+
+snd("piano", 4, C4);
+snd("piano", 4, D4);
+snd("piano", 4, E4);
+snd("piano", 4, F4);</div>
+          
+          <h4>Example 2: Chord Progression</h4>
+          <div class="code-block">tempoconst="120";
+key="C";
+
+snd("piano", 4, fsn=[C4, E4, G4]);
+snd("piano", 4, fsn=[F4, A4, C5]);
+snd("piano", 4, fsn=[G4, B4, D5]);
+snd("piano", 4, fsn=[C4, E4, G4]);</div>
+          
+          <h4>Example 3: Polyphonic Composition</h4>
+          <div class="code-block">tempoconst="120";
+key="C";
+
+snd("piano", 4, C4, class="melody");
+snd("bass", 4, C2, class="bass");
+
+sleep(4);
+
+snd("piano", 4, E4, class="melody");
+snd("bass", 4, E2, class="bass");</div>
+          
+          <h4>Example 4: Loops and Chips</h4>
+          <div class="code-block">tempoconst="120";
+
+chips pattern(){
+    snd("synth", 8, C4);
+    snd("synth", 8, E4);
+    snd("synth", 8, G4);
+}
+
+lp(4){
+    chips(pattern);
+}</div>
+          
+          <h4>Example 5: Tempo Change</h4>
+          <div class="code-block">tempoconst="120";
+
+snd("piano", 4, C4);
+snd("piano", 4, D4);
+
+newtempo="150";
+
+snd("piano", 4, E4);
+snd("piano", 4, F4);</div>
+        `
+      },
+      {
+        'id': 'faq',
+        'title': '❓ Frequently Asked Questions',
+        'content': `
+          <h4>Q: No sound is playing</h4>
+          <p><strong>A:</strong> Check the following:</p>
+          <ul class="list-style">
+            <li>Browser volume is not muted</li>
+            <li>Page has fully loaded</li>
+            <li>No errors in code (check console output)</li>
+            <li>Instrument names are correct</li>
+          </ul>
+          
+          <h4>Q: Cannot import UST file</h4>
+          <p><strong>A:</strong> Verify:</p>
+          <ul class="list-style">
+            <li>File extension is .ust</li>
+            <li>File is in standard UTAU format</li>
+            <li>File encoding is UTF-8 or Shift-JIS</li>
+          </ul>
+          
+          <h4>Q: Multiple tracks are not syncing properly</h4>
+          <p><strong>A:</strong> Use -cnt- for simultaneous execution:</p>
+          <div class="code-block">snd("piano", 4, C4)-cnt-snd("bass", 4, C2);</div>
+          
+          <h4>Q: How can I improve WAV export quality?</h4>
+          <p><strong>A:</strong> Currently fixed at 44.1kHz, but browser or system audio settings may allow quality adjustments.</p>
+          
+          <h4>Q: Slur is not working properly</h4>
+          <p><strong>A:</strong> Verify the target note:</p>
+          <ul class="list-style">
+            <li>Same pitch as the previous note</li>
+            <li>Temporally continuous (starts when previous note ends)</li>
+            <li>Has the ~ symbol</li>
+          </ul>
+          
+          <div class="warning">
+            <strong>⚠️ Note:</strong> SWS is still in development. Unexpected behavior and limitations may occur.
+          </div>
+          
+          <div class="success">
+            <strong>✅ Support:</strong> If you find issues, please report them at <a href="https://github.com/neon-0039/SWS-WebConsole/issues" style="color: var(--success);">GitHub Issues</a>.
+          </div>
+        `
+      }
+    ]
+  },
+  'en-GB': {
+    'page-title': '📚 SWS Help & Documentation',
+    'back-link': '← Back to Home',
+    'toc-title': 'Table of Contents',
+    'toc-started': 'Getting Started',
+    'toc-syntax': 'Basic Syntax',
+    'toc-commands': 'Commands Reference',
+    'toc-instruments': 'Instruments',
+    'toc-advanced': 'Advanced Features',
+    'toc-examples': 'Examples',
+    'toc-faq': 'FAQs',
+    'sections': [
+      {
+        'id': 'getting-started',
+        'title': '🚀 Getting Started',
+        'content': `
+          <p>Welcome to SWS Web Console! This guide will walk you through the basics of using SWS.</p>
+          
+          <h4>First Steps</h4>
+          <ol class="list-style">
+            <li>Open SWS Web Console</li>
+            <li>Type code in the editor or open an existing .ss or .ust file</li>
+            <li>Click the "▶ Play" button to play your composition</li>
+            <li>Click "Export WAV" to download the audio file</li>
+          </ol>
+          
+          <div class="note">
+            <strong>💡 Tip:</strong> Try the initial example code in the console and click Play to get started.
+          </div>
+          
+          <h4>File Formats Supported</h4>
+          <p>The "Open" button supports the following file formats:</p>
+          <ul class="list-style">
+            <li>.ss - SWS Script Format</li>
+            <li>.ust - UTAU Sequence Text Format</li>
+          </ul>
+        `
+      },
+      {
+        'id': 'basic-syntax',
+        'title': '📝 Basic Syntax',
+        'content': `
+          <p>SWS is a simple and readable scripting language. All statements end with a semicolon (;).</p>
+          
+          <h4>Basic Rules</h4>
+          <ul class="list-style">
+            <li>All commands end with a semicolon (;)</li>
+            <li>Comments are enclosed in &lt;...&gt;</li>
+            <li>Strings are enclosed in quotation marks (" or ')</li>
+            <li>Commands are case-insensitive</li>
+          </ul>
+          
+          <h4>Comments</h4>
+          <div class="code-block">&lt;This is a comment&gt;
+snd("piano", 4, C4); &lt;This is also a comment&gt;</div>
+          
+          <h4>Data Types</h4>
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Example</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Number</td>
+                  <td>120, 4.5, 8</td>
+                  <td>Tempo, length, etc.</td>
+                </tr>
+                <tr>
+                  <td>String</td>
+                  <td>"piano", "C4"</td>
+                  <td>Instrument, note name, etc.</td>
+                </tr>
+                <tr>
+                  <td>Array</td>
+                  <td>[C4, E4, G4]</td>
+                  <td>Used in fsn (multiple notes)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `
+      },
+      {
+        'id': 'commands',
+        'title': '⚙️ Commands Reference',
+        'content': `
+          <h4>tempoconst - Set Initial Tempo</h4>
+          <p>Use at the beginning of the file. Can only be set once.</p>
+          <div class="code-block">tempoconst="120";</div>
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>tempo</td><td>Number</td><td>BPM (Beats Per Minute): 30-500</td></tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <h4>newtempo - Change Tempo</h4>
+          <p>Change tempo from the current cursor position. Can be used multiple times.</p>
+          <div class="code-block">newtempo="150";</div>
+          
+          <h4>key - Set Key Signature</h4>
+          <p>Set the key signature. Notes are automatically corrected to match the key.</p>
+          <div class="code-block">key="C";</div>
+          <p><strong>Supported Keys:</strong> C, G, D, A, E, B, F#, F, Bb, Eb, Ab, Db, Am, Em, Bm, F#m, C#m, G#m, Dm, Gm, Cm, Fm</p>
+          
+          <h4>snd - Play Sound</h4>
+          <p>Play a note. The most frequently used command.</p>
+          <div class="code-block">snd("piano", 4, C4);</div>
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>instrument</td><td>String</td><td>Instrument name</td></tr>
+                <tr><td>length</td><td>Number</td><td>Note length (4=quarter note, 8=eighth note, etc.)</td></tr>
+                <tr><td>pitch</td><td>String</td><td>Pitch (C4, C#4, null, etc.)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <h4>sleep - Rest</h4>
+          <p>Silence for the specified number of beats.</p>
+          <div class="code-block">sleep(4);</div>
+          
+          <h4>chips - Define a Chip</h4>
+          <p>Define a reusable code block.</p>
+          <div class="code-block">chips riff(){
+    snd("piano", 8, C4);
+    snd("piano", 8, E4);
+}</div>
+          
+          <h4>chips() - Call a Chip</h4>
+          <p>Call a previously defined chip.</p>
+          <div class="code-block">chips(riff);</div>
+          
+          <h4>lp - Loop</h4>
+          <p>Repeat a code block a specified number of times.</p>
+          <div class="code-block">lp(4){
+    snd("piano", 8, C4);
+}</div>
+          
+          <h4>-cnt- - Simultaneous Execution</h4>
+          <p>Execute multiple snd() commands at the same time.</p>
+          <div class="code-block">snd("piano", 4, C4)-cnt-snd("bass", 4, C2);</div>
+        `
+      },
+      {
+        'id': 'instruments',
+        'title': '🎹 Instruments',
+        'content': `
+          <p>SWS supports the following instruments.</p>
+          
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr><th>Category</th><th>Instrument Name</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Piano</td><td>piano, grand_piano</td><td>Classic piano sound</td></tr>
+                <tr><td>Synth</td><td>synth, synth_lead, synth_bass</td><td>For electronic music</td></tr>
+                <tr><td>Bass</td><td>bass</td><td>Low frequency bass</td></tr>
+                <tr><td>Drums</td><td>drum, kick, snare, hihat, hi_hat</td><td>Percussion</td></tr>
+                <tr><td>Waveforms</td><td>sine, square, triangle, saw, sawtooth</td><td>Basic waveforms</td></tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="note">
+            <strong>💡 Tip:</strong> Try the same melody with different instruments to hear the differences.
+          </div>
+        `
+      },
+      {
+        'id': 'advanced',
+        'title': '⭐ Advanced Features',
+        'content': `
+          <h4>Chords (Multiple Notes)</h4>
+          <p>Create chords using the fsn=[] syntax.</p>
+          <div class="code-block">snd("piano", 4, fsn=[C4, E4, G4]);</div>
+          <p>All notes play simultaneously.</p>
+          
+          <h4>Slur (Note Legato)</h4>
+          <p>Append ~ to a note name to connect it to the next note of the same pitch.</p>
+          <div class="code-block">snd("piano", 4, C4~);
+snd("piano", 4, C4);</div>
+          
+          <h4>Bypass Key Correction</h4>
+          <p>Append ! to ignore key correction.</p>
+          <div class="code-block">key="C";
+snd("piano", 4, F#4!); &lt;F# is not corrected to C key&gt;</div>
+          
+          <h4>Combined Modifiers</h4>
+          <p>You can combine slur and bypass.</p>
+          <div class="code-block">snd("piano", 4, C4~!); &lt;Slur & Bypass&gt;</div>
+          
+          <h4>Lyric Attribute</h4>
+          <p>Add lyrics to notes. Used in UST export.</p>
+          <div class="code-block">snd("piano", 4, C4, Lyric="あ");</div>
+          
+          <h4>Tracks (Class)</h4>
+          <p>Manage multiple tracks independently.</p>
+          <div class="code-block">snd("piano", 4, C4, class="melody");
+snd("bass", 4, C2, class="bass");</div>
+          
+          <div class="note">
+            <strong>💡 Tip:</strong> In the Web Console, tracks are managed via UI and class attributes are automatically added when files are saved.
+          </div>
+        `
+      },
+      {
+        'id': 'examples',
+        'title': '📖 Examples',
+        'content': `
+          <h4>Example 1: Simple Melody</h4>
+          <div class="code-block">tempoconst="120";
+key="C";
+
+snd("piano", 4, C4);
+snd("piano", 4, D4);
+snd("piano", 4, E4);
+snd("piano", 4, F4);</div>
+          
+          <h4>Example 2: Chord Progression</h4>
+          <div class="code-block">tempoconst="120";
+key="C";
+
+snd("piano", 4, fsn=[C4, E4, G4]);
+snd("piano", 4, fsn=[F4, A4, C5]);
+snd("piano", 4, fsn=[G4, B4, D5]);
+snd("piano", 4, fsn=[C4, E4, G4]);</div>
+          
+          <h4>Example 3: Polyphonic Composition</h4>
+          <div class="code-block">tempoconst="120";
+key="C";
+
+snd("piano", 4, C4, class="melody");
+snd("bass", 4, C2, class="bass");
+
+sleep(4);
+
+snd("piano", 4, E4, class="melody");
+snd("bass", 4, E2, class="bass");</div>
+          
+          <h4>Example 4: Loops and Chips</h4>
+          <div class="code-block">tempoconst="120";
+
+chips pattern(){
+    snd("synth", 8, C4);
+    snd("synth", 8, E4);
+    snd("synth", 8, G4);
+}
+
+lp(4){
+    chips(pattern);
+}</div>
+          
+          <h4>Example 5: Tempo Change</h4>
+          <div class="code-block">tempoconst="120";
+
+snd("piano", 4, C4);
+snd("piano", 4, D4);
+
+newtempo="150";
+
+snd("piano", 4, E4);
+snd("piano", 4, F4);</div>
+        `
+      },
+      {
+        'id': 'faq',
+        'title': '❓ Frequently Asked Questions',
+        'content': `
+          <h4>Q: No sound is playing</h4>
+          <p><strong>A:</strong> Check the following:</p>
+          <ul class="list-style">
+            <li>Browser volume is not muted</li>
+            <li>Page has fully loaded</li>
+            <li>No errors in code (check console output)</li>
+            <li>Instrument names are correct</li>
+          </ul>
+          
+          <h4>Q: Cannot import UST file</h4>
+          <p><strong>A:</strong> Verify:</p>
+          <ul class="list-style">
+            <li>File extension is .ust</li>
+            <li>File is in standard UTAU format</li>
+            <li>File encoding is UTF-8 or Shift-JIS</li>
+          </ul>
+          
+          <h4>Q: Multiple tracks are not syncing properly</h4>
+          <p><strong>A:</strong> Use -cnt- for simultaneous execution:</p>
+          <div class="code-block">snd("piano", 4, C4)-cnt-snd("bass", 4, C2);</div>
+          
+          <h4>Q: How can I improve WAV export quality?</h4>
+          <p><strong>A:</strong> Currently fixed at 44.1kHz, but browser or system audio settings may allow quality adjustments.</p>
+          
+          <h4>Q: Slur is not working properly</h4>
+          <p><strong>A:</strong> Verify the target note:</p>
+          <ul class="list-style">
+            <li>Same pitch as the previous note</li>
+            <li>Temporally continuous (starts when previous note ends)</li>
+            <li>Has the ~ symbol</li>
+          </ul>
+          
+          <div class="warning">
+            <strong>⚠️ Note:</strong> SWS is still in development. Unexpected behaviour and limitations may occur.
+          </div>
+          
+          <div class="success">
+            <strong>✅ Support:</strong> If you find issues, please report them at <a href="https://github.com/neon-0039/SWS-WebConsole/issues" style="color: var(--success);">GitHub Issues</a>.
+          </div>
+        `
+      }
+    ]
+  },
+  'de': {
+    'page-title': '📚 SWS Hilfe & Dokumentation',
+    'back-link': '← Zur Startseite',
+    'toc-title': 'Inhaltsverzeichnis',
+    'toc-started': 'Erste Schritte',
+    'toc-syntax': 'Grundlegende Syntax',
+    'toc-commands': 'Befehlsreferenz',
+    'toc-instruments': 'Instrumente',
+    'toc-advanced': 'Erweiterte Funktionen',
+    'toc-examples': 'Beispiele',
+    'toc-faq': 'Häufig gestellte Fragen',
+    'sections': [
+      {
+        'id': 'getting-started',
+        'title': '🚀 Erste Schritte',
+        'content': `
+          <p>Willkommen bei der SWS Web Console! Diese Anleitung führt Sie durch die Grundlagen von SWS.</p>
+          
+          <h4>Erste Schritte</h4>
+          <ol class="list-style">
+            <li>Öffnen Sie die SWS Web Console</li>
+            <li>Geben Sie Code im Editor ein oder öffnen Sie eine vorhandene .ss- oder .ust-Datei</li>
+            <li>Klicken Sie auf die Schaltfläche „▶ Play", um Ihre Komposition abzuspielen</li>
+            <li>Klicken Sie auf „Export WAV", um die Audiodatei herunterzuladen</li>
+          </ol>
+          
+          <div class="note">
+            <strong>💡 Tipp:</strong> Probieren Sie den anfänglichen Beispielcode in der Konsole und klicken Sie auf Play.
+          </div>
+          
+          <h4>Unterstützte Dateiformate</h4>
+          <p>Die Schaltfläche „Open" unterstützt die folgenden Dateiformate:</p>
+          <ul class="list-style">
+            <li>.ss - SWS-Skriptformat</li>
+            <li>.ust - UTAU Sequence Text-Format</li>
+          </ul>
+        `
+      },
+      {
+        'id': 'basic-syntax',
+        'title': '📝 Grundlegende Syntax',
+        'content': `
+          <p>SWS ist eine einfache und lesbare Skriptsprache. Alle Anweisungen enden mit einem Semikolon (;).</p>
+          
+          <h4>Grundlegende Regeln</h4>
+          <ul class="list-style">
+            <li>Alle Befehle enden mit einem Semikolon (;)</li>
+            <li>Kommentare sind in &lt;...&gt; eingeschlossen</li>
+            <li>Zeichenketten sind in Anführungszeichen eingeschlossen (" oder ')</li>
+            <li>Befehle unterscheiden nicht zwischen Groß- und Kleinschreibung</li>
+          </ul>
+          
+          <h4>Kommentare</h4>
+          <div class="code-block">&lt;Dies ist ein Kommentar&gt;
+snd("piano", 4, C4); &lt;Dies ist auch ein Kommentar&gt;</div>
+          
+          <h4>Datentypen</h4>
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr>
+                  <th>Typ</th>
+                  <th>Beispiel</th>
+                  <th>Beschreibung</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Zahl</td>
+                  <td>120, 4,5, 8</td>
+                  <td>Tempo, Länge, usw.</td>
+                </tr>
+                <tr>
+                  <td>Zeichenkette</td>
+                  <td>"piano", "C4"</td>
+                  <td>Instrument, Notenname, usw.</td>
+                </tr>
+                <tr>
+                  <td>Array</td>
+                  <td>[C4, E4, G4]</td>
+                  <td>Wird in fsn verwendet (mehrere Noten)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `
+      },
+      {
+        'id': 'commands',
+        'title': '⚙️ Befehlsreferenz',
+        'content': `
+          <h4>tempoconst - Anfängliches Tempo setzen</h4>
+          <p>Verwenden Sie am Anfang der Datei. Kann nur einmal gesetzt werden.</p>
+          <div class="code-block">tempoconst="120";</div>
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr><th>Parameter</th><th>Typ</th><th>Beschreibung</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>tempo</td><td>Zahl</td><td>BPM (Schläge pro Minute): 30-500</td></tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <h4>newtempo - Tempo ändern</h4>
+          <p>Ändern Sie das Tempo von der aktuellen Cursorposition aus. Kann mehrfach verwendet werden.</p>
+          <div class="code-block">newtempo="150";</div>
+          
+          <h4>key - Tonart festlegen</h4>
+          <p>Stellen Sie die Tonart ein. Noten werden automatisch angepasst, um zur Tonart zu passen.</p>
+          <div class="code-block">key="C";</div>
+          <p><strong>Unterstützte Tonarten:</strong> C, G, D, A, E, B, F#, F, Bb, Eb, Ab, Db, Am, Em, Bm, F#m, C#m, G#m, Dm, Gm, Cm, Fm</p>
+          
+          <h4>snd - Sound abspielen</h4>
+          <p>Spielen Sie eine Note ab. Der am häufigsten verwendete Befehl.</p>
+          <div class="code-block">snd("piano", 4, C4);</div>
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr><th>Parameter</th><th>Typ</th><th>Beschreibung</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>instrument</td><td>Zeichenkette</td><td>Instrumentname</td></tr>
+                <tr><td>length</td><td>Zahl</td><td>Notenlänge (4=Viertelnote, 8=Achtelnote, usw.)</td></tr>
+                <tr><td>pitch</td><td>Zeichenkette</td><td>Tonhöhe (C4, C#4, null, usw.)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <h4>sleep - Pause</h4>
+          <p>Stille für die angegebene Anzahl von Schlägen.</p>
+          <div class="code-block">sleep(4);</div>
+          
+          <h4>chips - Einen Chip definieren</h4>
+          <p>Definieren Sie einen wiederverwendbaren Codeblock.</p>
+          <div class="code-block">chips riff(){
+    snd("piano", 8, C4);
+    snd("piano", 8, E4);
+}</div>
+          
+          <h4>chips() - Chip aufrufen</h4>
+          <p>Rufen Sie einen zuvor definierten Chip auf.</p>
+          <div class="code-block">chips(riff);</div>
+          
+          <h4>lp - Schleife</h4>
+          <p>Wiederholen Sie einen Codeblock eine angegebene Anzahl von Malen.</p>
+          <div class="code-block">lp(4){
+    snd("piano", 8, C4);
+}</div>
+          
+          <h4>-cnt- - Gleichzeitige Ausführung</h4>
+          <p>Führen Sie mehrere snd()-Befehle gleichzeitig aus.</p>
+          <div class="code-block">snd("piano", 4, C4)-cnt-snd("bass", 4, C2);</div>
+        `
+      },
+      {
+        'id': 'instruments',
+        'title': '🎹 Instrumente',
+        'content': `
+          <p>SWS unterstützt die folgenden Instrumente.</p>
+          
+          <div class="table-wrapper">
+            <table class="syntax-table">
+              <thead>
+                <tr><th>Kategorie</th><th>Instrumentname</th><th>Beschreibung</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Klavier</td><td>piano, grand_piano</td><td>Klassischer Klavierklang</td></tr>
+                <tr><td>Synth</td><td>synth, synth_lead, synth_bass</td><td>Für elektronische Musik</td></tr>
+                <tr><td>Bass</td><td>bass</td><td>Tieffrequenter Bass</td></tr>
+                <tr><td>Schlagzeug</td><td>drum, kick, snare, hihat, hi_hat</td><td>Schlagzeug</td></tr>
+                <tr><td>Wellenformen</td><td>sine, square, triangle, saw, sawtooth</td><td>Grundwellenformen</td></tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="note">
+            <strong>💡 Tipp:</strong> Versuchen Sie dieselbe Melodie mit verschiedenen Instrumenten, um die Unterschiede zu hören.
+          </div>
+        `
+      },
+      {
+        'id': 'advanced',
+        'title': '⭐ Erweiterte Funktionen',
+        'content': `
+          <h4>Akkorde (mehrere Noten)</h4>
+          <p>Erstellen Sie Akkorde mit der Syntax fsn=[].</p>
+          <div class="code-block">snd("piano", 4, fsn=[C4, E4, G4]);</div>
+          <p>Alle Noten werden gleichzeitig abgespielt.</p>
+          
+          <h4>Bindung (Note Legato)</h4>
+          <p>Hängen Sie ~ an einen Notennamen an, um ihn mit der nächsten Note derselben Tonhöhe zu verbinden.</p>
+          <div class="code-block">snd("piano", 4, C4~);
+snd("piano", 4, C4);</div>
+          
+          <h4>Tonartkorrektur umgehen</h4>
+          <p>Hängen Sie ! an, um die Tonartkorrektur zu ignorieren.</p>
+          <div class="code-block">key="C";
+snd("piano", 4, F#4!); &lt;F# wird nicht auf C-Tonart korrigiert&gt;</div>
+          
+          <h4>Kombinierte Modifikatoren</h4>
+          <p>Sie können Bindung und Umgehung kombinieren.</p>
+          <div class="code-block">snd("piano", 4, C4~!); &lt;Bindung & Umgehung&gt;</div>
+          
+          <h4>Lyrik-Attribut</h4>
+          <p>Fügen Sie Noten Lyriken hinzu. Wird beim UST-Export verwendet.</p>
+          <div class="code-block">snd("piano", 4, C4, Lyric="あ");</div>
+          
+          <h4>Spuren (Klasse)</h4>
+          <p>Verwalten Sie mehrere Spuren unabhängig.</p>
+          <div class="code-block">snd("piano", 4, C4, class="melody");
+snd("bass", 4, C2, class="bass");</div>
+          
+          <div class="note">
+            <strong>💡 Tipp:</strong> In der Web Console werden Spuren über die Benutzeroberfläche verwaltet, und Class-Attribute werden beim Speichern von Dateien automatisch hinzugefügt.
+          </div>
+        `
+      },
+      {
+        'id': 'examples',
+        'title': '📖 Beispiele',
+        'content': `
+          <h4>Beispiel 1: Einfache Melodie</h4>
+          <div class="code-block">tempoconst="120";
+key="C";
+
+snd("piano", 4, C4);
+snd("piano", 4, D4);
+snd("piano", 4, E4);
+snd("piano", 4, F4);</div>
+          
+          <h4>Beispiel 2: Akkordfolge</h4>
+          <div class="code-block">tempoconst="120";
+key="C";
+
+snd("piano", 4, fsn=[C4, E4, G4]);
+snd("piano", 4, fsn=[F4, A4, C5]);
+snd("piano", 4, fsn=[G4, B4, D5]);
+snd("piano", 4, fsn=[C4, E4, G4]);</div>
+          
+          <h4>Beispiel 3: Mehrstimmige Komposition</h4>
+          <div class="code-block">tempoconst="120";
+key="C";
+
+snd("piano", 4, C4, class="melody");
+snd("bass", 4, C2, class="bass");
+
+sleep(4);
+
+snd("piano", 4, E4, class="melody");
+snd("bass", 4, E2, class="bass");</div>
+          
+          <h4>Beispiel 4: Schleifen und Chips</h4>
+          <div class="code-block">tempoconst="120";
+
+chips pattern(){
+    snd("synth", 8, C4);
+    snd("synth", 8, E4);
+    snd("synth", 8, G4);
+}
+
+lp(4){
+    chips(pattern);
+}</div>
+          
+          <h4>Beispiel 5: Tempowechsel</h4>
+          <div class="code-block">tempoconst="120";
+
+snd("piano", 4, C4);
+snd("piano", 4, D4);
+
+newtempo="150";
+
+snd("piano", 4, E4);
+snd("piano", 4, F4);</div>
+        `
+      },
+      {
+        'id': 'faq',
+        'title': '❓ Häufig gestellte Fragen',
+        'content': `
+          <h4>F: Es ist kein Sound zu hören</h4>
+          <p><strong>A:</strong> Überprüfen Sie Folgendes:</p>
+          <ul class="list-style">
+            <li>Die Browserausgabe ist nicht stummgeschaltet</li>
+            <li>Die Seite ist vollständig geladen</li>
+            <li>Es gibt keine Fehler im Code (Konsolenausgabe prüfen)</li>
+            <li>Instrumentnamen sind korrekt</li>
+          </ul>
+          
+          <h4>F: UST-Datei kann nicht importiert werden</h4>
+          <p><strong>A:</strong> Überprüfen Sie Folgendes:</p>
+          <ul class="list-style">
+            <li>Die Dateiendung ist .ust</li>
+            <li>Die Datei ist im Standard-UTAU-Format</li>
+            <li>Die Dateicodierung ist UTF-8 oder Shift-JIS</li>
+          </ul>
+          
+          <h4>F: Mehrere Spuren werden nicht richtig synchronisiert</h4>
+          <p><strong>A:</strong> Verwenden Sie -cnt- für gleichzeitige Ausführung:</p>
+          <div class="code-block">snd("piano", 4, C4)-cnt-snd("bass", 4, C2);</div>
+          
+          <h4>F: Wie kann ich die WAV-Exportqualität verbessern?</h4>
+          <p><strong>A:</strong> Derzeit ist es auf 44,1 kHz festgelegt, aber Browser- oder Systemaudieeinstellungen können Qualitätsanpassungen ermöglichen.</p>
+          
+          <h4>F: Die Bindung funktioniert nicht richtig</h4>
+          <p><strong>A:</strong> Überprüfen Sie die Zielnote:</p>
+          <ul class="list-style">
+            <li>Gleiche Tonhöhe wie die vorherige Note</li>
+            <li>Zeitlich kontinuierlich (startet, wenn die vorherige Note endet)</li>
+            <li>Hat das ~ Symbol</li>
+          </ul>
+          
+          <div class="warning">
+            <strong>⚠️ Hinweis:</strong> SWS ist noch in Entwicklung. Es können unerwartete Verhaltensweisen und Einschränkungen auftreten.
+          </div>
+          
+          <div class="success">
+            <strong>✅ Unterstützung:</strong> Wenn Sie Probleme finden, melden Sie diese bitte unter <a href="https://github.com/neon-0039/SWS-WebConsole/issues" style="color: var(--success);">GitHub Issues</a>.
+          </div>
+        `
+      }
+    ]
+  }
+};
+
+// ===== ACCORDION GENERATION =====
+function generateAccordion(lang) {
+  const content = helpContent[lang];
+  const container = document.getElementById('accordion-container');
+  container.innerHTML = '';
+  
+  content.sections.forEach((section, index) => {
+    const item = document.createElement('div');
+    item.className = 'accordion-item' + (index === 0 ? ' active' : '');
+    item.innerHTML = `
+      <div class="accordion-header">
+        <h3>${section.title}</h3>
+        <span class="accordion-toggle">▼</span>
+      </div>
+      <div class="accordion-content">
+        ${section.content}
+      </div>
+    `;
+    
+    item.querySelector('.accordion-header').addEventListener('click', () => {
+      item.classList.toggle('active');
+    });
+    
+    container.appendChild(item);
+  });
+}
+
+// ===== LANGUAGE SWITCHING =====
+function setLanguage(lang) {
+  localStorage.setItem('swsLanguage', lang);
+  
+  // Update text elements
+  document.getElementById('page-title').textContent = helpContent[lang]['page-title'];
+  document.getElementById('back-link').textContent = helpContent[lang]['back-link'];
+  document.querySelector('.toc h2').textContent = helpContent[lang]['toc-title'];
+  
+  document.getElementById('toc-started').textContent = helpContent[lang]['toc-started'];
+  document.getElementById('toc-syntax').textContent = helpContent[lang]['toc-syntax'];
+  document.getElementById('toc-commands').textContent = helpContent[lang]['toc-commands'];
+  document.getElementById('toc-instruments').textContent = helpContent[lang]['toc-instruments'];
+  document.getElementById('toc-advanced').textContent = helpContent[lang]['toc-advanced'];
+  document.getElementById('toc-examples').textContent = helpContent[lang]['toc-examples'];
+  document.getElementById('toc-faq').textContent = helpContent[lang]['toc-faq'];
+  
+  document.getElementById('footer').textContent = '© 2024 SWS Web Console | Version 0.2.0';
+  
+  // Update active button
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.querySelector(`[data-lang="${lang}"]`).classList.add('active');
+  
+  // Generate accordion
+  generateAccordion(lang);
+  
+  // Update HTML lang
+  document.documentElement.lang = lang;
+}
+
+// ===== LANGUAGE BUTTONS =====
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const lang = btn.getAttribute('data-lang');
+    setLanguage(lang);
+  });
+});
+
+// ===== INITIALIZATION =====
+window.addEventListener('load', () => {
+  let savedLang = localStorage.getItem('swsLanguage');
+  
+  if (!savedLang) {
+    const browserLang = navigator.language || navigator.userLanguage;
+    
+    if (browserLang.startsWith('ja')) {
+      savedLang = 'ja';
+    } else if (browserLang.startsWith('de')) {
+      savedLang = 'de';
+    } else if (browserLang.startsWith('en-GB') || browserLang === 'en-GB') {
+      savedLang = 'en-GB';
+    } else if (browserLang.startsWith('en')) {
+      savedLang = 'en-US';
+    } else {
+      savedLang = 'en-US';
+    }
+  }
+  
+  setLanguage(savedLang);
+});
+</script>
+
+</body>
+</html>
