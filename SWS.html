@@ -1,0 +1,2305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SWS Web Console</title>
+<style>
+/* ===== CSS Variables ===== */
+:root {
+  --bg: #0b0b0b;
+  --panel: #111;
+  --muted: #9aa;
+  --accent: #2196f3;
+  --accent2: #ffc107;
+  --text: #e6eef8;
+  --editor-font-family: 'Courier New', monospace;
+  --editor-font-size: 13px;
+  --editor-line-height: 1.5;
+  --editor-padding-top: 8px;
+  --editor-padding-left: 12px;
+  --editor-padding-right: 8px;
+  --editor-padding-bottom: 8px;
+}
+
+/* ===== Base ===== */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== Header ===== */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--panel);
+  border-bottom: 1px solid #222;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.header .title {
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.header .controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+button {
+  background: #1f1f1f;
+  color: var(--text);
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+button:hover {
+  background: #2a2a2a;
+}
+
+button.primary {
+  background: linear-gradient(180deg, #2b8aef, #1766d6);
+  color: #fff;
+}
+
+button.primary:hover {
+  background: linear-gradient(180deg, #3498ff, #1976e8);
+}
+
+button.danger {
+  background: linear-gradient(180deg, #d32f2f, #a51b1b);
+  color: #fff;
+}
+
+button.danger:hover {
+  background: linear-gradient(180deg, #e53935, #b71c1c);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ===== Main Layout ===== */
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.left {
+  width: 220px;
+  background: #0e0e0e;
+  border-right: 1px solid #222;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.left .header-small {
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--muted);
+  border-bottom: 1px solid #222;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.track-list {
+  flex: 1;
+  overflow: auto;
+  padding: 8px;
+  min-height: 0;
+}
+
+.track-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 2px;
+  user-select: none;
+  border-left: 3px solid transparent;
+  transition: background 0.15s;
+}
+
+.track-item:hover {
+  background: #1a1a1a;
+}
+
+.track-item.selected {
+  background: rgba(33, 150, 243, 0.08);
+  border-left-color: var(--accent);
+  color: #fff;
+}
+
+.track-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.track-name {
+  font-weight: 600;
+  font-size: 12px;
+  flex: 1;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.track-status {
+  margin-left: auto;
+  color: #bcd;
+  font-size: 11px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.left .actions {
+  padding: 8px;
+  border-top: 1px solid #222;
+  display: grid;
+  grid-template-columns: auto auto auto;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.left .actions button {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+/* ===== Center Section ===== */
+.center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  background: #0c0c0c;
+  border-bottom: 1px solid #222;
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  align-items: center;
+  min-height: 40px;
+}
+
+.tab {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #101010;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 12px;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.tab:hover {
+  background: #161616;
+}
+
+.tab.active {
+  background: linear-gradient(180deg, #123f5f, #0b2b46);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tab .close {
+  font-weight: 700;
+  color: #f66;
+  cursor: pointer;
+  padding-left: 6px;
+  margin-left: 2px;
+  user-select: none;
+}
+
+.tab .close:hover {
+  color: #ff8888;
+}
+
+.tab-plus {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #101010;
+  cursor: pointer;
+  font-weight: 700;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+.tab-plus:hover {
+  background: #161616;
+}
+
+/* ===== Editor Container ===== */
+.editor-container {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  background: #0a0a0a;
+}
+
+.line-numbers {
+  width: 48px;
+  background: #071428;
+  color: #8fb4d9;
+  padding: var(--editor-padding-top) 0 var(--editor-padding-bottom) 8px;
+  overflow: hidden;
+  border-right: 1px solid #112;
+  flex-shrink: 0;
+  font-family: var(--editor-font-family);
+  font-size: var(--editor-font-size);
+  line-height: var(--editor-line-height);
+  text-align: right;
+  padding-right: 6px;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.line-numbers-content {
+  white-space: pre;
+}
+
+.editor-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: relative;
+}
+
+.editor-scroll-wrapper {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+}
+
+textarea {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: var(--editor-padding-top) var(--editor-padding-right) var(--editor-padding-bottom) var(--editor-padding-left);
+  background: transparent;
+  color: var(--text);
+  border: 0;
+  outline: 0;
+  resize: none;
+  font-family: var(--editor-font-family);
+  font-size: var(--editor-font-size);
+  line-height: var(--editor-line-height);
+  white-space: pre;
+  overflow-wrap: normal;
+  word-wrap: normal;
+  word-break: normal;
+  box-sizing: border-box;
+  z-index: 2;
+  margin: 0;
+}
+
+textarea::selection {
+  background: rgba(33, 150, 243, 0.3);
+}
+
+.highlight-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: var(--editor-padding-top) var(--editor-padding-right) var(--editor-padding-bottom) var(--editor-padding-left);
+  overflow: hidden;
+  pointer-events: none;
+  font-family: var(--editor-font-family);
+  font-size: var(--editor-font-size);
+  line-height: var(--editor-line-height);
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+.highlight-row {
+  height: calc(var(--editor-line-height) * var(--editor-font-size));
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border-left: 3px solid transparent;
+  box-sizing: border-box;
+}
+
+.highlight-row.playing {
+  background: rgba(33, 150, 243, 0.12);
+  border-left-color: var(--accent);
+}
+
+.highlight-row.selected {
+  background: rgba(255, 193, 7, 0.08);
+  border-left-color: var(--accent2);
+}
+
+/* ===== Console ===== */
+.console-section {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #060606, #0a0a0a);
+  border-top: 1px solid #222;
+  flex-shrink: 0;
+  max-height: 220px;
+  min-height: 100px;
+}
+
+.console-output {
+  flex: 1;
+  overflow: auto;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.4), rgba(2, 6, 10, 0.4));
+  padding: 8px;
+  border-radius: 6px;
+  color: #dff1ff;
+  font-family: var(--editor-font-family);
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 8px;
+  box-sizing: border-box;
+  min-height: 0;
+}
+
+.console-line {
+  margin: 0;
+  padding: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.console-line.info {
+  color: #a9d1ff;
+}
+
+.console-line.success {
+  color: #9ef0a9;
+}
+
+.console-line.error {
+  color: #ff9b9b;
+}
+
+.console-line + .console-line {
+  margin-top: 4px;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 10px;
+  padding: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  border-top: 1px solid #222;
+}
+
+.project-info {
+  color: var(--muted);
+  font-size: 12px;
+  margin-right: auto;
+  white-space: nowrap;
+}
+
+.footer-actions button {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+/* ===== File Input ===== */
+input[type="file"] {
+  display: none;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .left {
+    width: 180px;
+  }
+  
+  .header .controls {
+    width: 100%;
+  }
+  
+  .header {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .left {
+    display: none;
+  }
+  
+  .main {
+    flex-direction: column;
+  }
+  
+  .console-section {
+    max-height: 160px;
+  }
+}
+
+@media (max-width: 480px) {
+  button {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  .header .title {
+    font-size: 12px;
+  }
+  
+  .console-output {
+    font-size: 11px;
+    padding: 6px;
+    margin: 6px;
+  }
+}
+
+/* ===== Scrollbar Styling ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="title">SWS Web Console</div>
+  <div class="controls">
+    <input id="fileInput" type="file" accept=".ss,.ust" />
+    <button id="openBtn">Open</button>
+    <button id="saveBtn">Save</button>
+    <button id="playBtn" class="primary">▶ Play</button>
+    <button id="stopBtn" class="danger" disabled>■ Stop</button>
+  </div>
+</header>
+
+<!-- Main Layout -->
+<div class="main">
+  
+  <!-- Left Sidebar: Track List -->
+  <aside class="left">
+    <div class="header-small">TRACKS</div>
+    <div class="track-list" id="trackList"></div>
+    <div class="actions">
+      <button id="addTrackBtn">+ Track</button>
+      <button id="renameTrackBtn">Rename</button>
+      <button id="deleteTrackBtn">Delete</button>
+    </div>
+  </aside>
+
+  <!-- Center: Editor -->
+  <section class="center">
+    <div class="tabs" id="tabs"></div>
+    
+    <div class="editor-container">
+      <div class="line-numbers" id="lineNumbers">
+        <div class="line-numbers-content" id="lineNumbersContent"></div>
+      </div>
+      <div class="editor-wrapper">
+        <div class="editor-scroll-wrapper" id="editorScrollWrapper">
+          <textarea id="codeEditor" spellcheck="false"></textarea>
+          <div class="highlight-layer" id="highlightLayer"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Console -->
+    <div class="console-section">
+      <div class="console-output" id="consoleOutput"></div>
+      <div class="footer-actions">
+        <div class="project-info" id="projectInfo">tempo=120 key=C</div>
+        <button id="exportSsBtn">Export SS</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ========================================
+// SWS Web Console - Complete Implementation
+// ========================================
+
+(() => {
+
+// ===== CONSTANTS & CONFIG =====
+const VALID_INSTRUMENTS = new Set([
+  'piano', 'grand_piano', 'synth', 'synth_lead', 'synth_bass',
+  'bass', 'drum', 'kick', 'hihat', 'hi_hat', 'snare',
+  'sine', 'square', 'triangle', 'saw', 'sawtooth'
+]);
+
+const KEY_SCALES = {
+  'C': [0, 2, 4, 5, 7, 9, 11], 'G': [7, 9, 11, 0, 2, 4, 6],
+  'D': [2, 4, 6, 7, 9, 11, 1], 'A': [9, 11, 1, 2, 4, 6, 8],
+  'E': [4, 6, 8, 9, 11, 1, 3], 'B': [11, 1, 3, 4, 6, 8, 10],
+  'F#': [6, 8, 10, 11, 1, 3, 5], 'F': [5, 7, 9, 10, 0, 2, 4],
+  'Bb': [10, 0, 2, 3, 5, 7, 9], 'Eb': [3, 5, 7, 8, 10, 0, 2],
+  'Ab': [8, 10, 0, 1, 3, 5, 7], 'Db': [1, 3, 5, 6, 8, 10, 0],
+  'Am': [9, 11, 0, 2, 4, 5, 7], 'Em': [4, 5, 7, 9, 11, 0, 2],
+  'Bm': [11, 0, 2, 4, 6, 7, 9], 'F#m': [6, 7, 9, 11, 1, 3, 5],
+  'C#m': [1, 2, 4, 6, 8, 9, 11], 'G#m': [8, 9, 11, 1, 3, 5, 7],
+  'Dm': [2, 3, 5, 7, 9, 10, 0], 'Gm': [7, 8, 10, 0, 2, 3, 5],
+  'Cm': [0, 1, 3, 5, 7, 8, 10], 'Fm': [5, 6, 8, 10, 0, 1, 3]
+};
+
+const NOTE_TABLE = {
+  'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+  'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
+  'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+};
+
+const TRACK_COLORS = [
+  '#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731', '#5f27cd',
+  '#00d2d3', '#ff9ff3', '#54a0ff', '#48dbfb', '#1dd1a1'
+];
+
+// ===== DOM ELEMENTS =====
+const el = {
+  fileInput: document.getElementById('fileInput'),
+  openBtn: document.getElementById('openBtn'),
+  saveBtn: document.getElementById('saveBtn'),
+  playBtn: document.getElementById('playBtn'),
+  stopBtn: document.getElementById('stopBtn'),
+  addTrackBtn: document.getElementById('addTrackBtn'),
+  renameTrackBtn: document.getElementById('renameTrackBtn'),
+  deleteTrackBtn: document.getElementById('deleteTrackBtn'),
+  tabs: document.getElementById('tabs'),
+  codeEditor: document.getElementById('codeEditor'),
+  lineNumbers: document.getElementById('lineNumbers'),
+  lineNumbersContent: document.getElementById('lineNumbersContent'),
+  editorScrollWrapper: document.getElementById('editorScrollWrapper'),
+  highlightLayer: document.getElementById('highlightLayer'),
+  trackList: document.getElementById('trackList'),
+  consoleOutput: document.getElementById('consoleOutput'),
+  exportSsBtn: document.getElementById('exportSsBtn'),
+  projectInfo: document.getElementById('projectInfo')
+};
+
+// ===== PROJECT STATE =====
+const Project = {
+  tempo: 120,
+  key: 'C',
+  tracks: []
+};
+
+// ===== UI STATE =====
+let selectedTrackId = null;
+const chipsStore = new Map();
+const eventMap = new Map();
+
+// ===== PLAYBACK STATE =====
+let audioCtx = null;
+let playbackState = {
+  playing: false,
+  startTime: 0,
+  timers: [],
+  nodes: [],
+  tracks: {}
+};
+
+// ===== UTILITIES =====
+function uid(prefix = 'id') {
+  return prefix + '-' + Math.random().toString(36).slice(2, 9);
+}
+
+function escapeHtml(str) {
+  if (str == null) return '';
+  const map = {
+    '&': '&amp;', '<': '&lt;', '>': '&gt;',
+    '"': '&quot;', "'": '&#039;'
+  };
+  return String(str).replace(/[&<>"']/g, c => map[c]);
+}
+
+function randomColor() {
+  return TRACK_COLORS[Math.floor(Math.random() * TRACK_COLORS.length)];
+}
+
+function log(msg, type = 'info') {
+  const line = document.createElement('div');
+  line.className = 'console-line ' + type;
+  line.textContent = msg;
+  el.consoleOutput.appendChild(line);
+  el.consoleOutput.scrollTop = el.consoleOutput.scrollHeight;
+}
+
+function swsError(lineNum, errType, message) {
+  const txt = `SWS ERROR (line ${lineNum}): ${errType}: ${message}`;
+  log(txt, 'error');
+  stopPlayback(true);
+  if (typeof lineNum === 'number') jumpToLine(lineNum);
+}
+
+function jumpToLine(line) {
+  const text = el.codeEditor.value || '';
+  const lines = text.split(/\r?\n/);
+  if (line < 1 || line > lines.length) return;
+  let pos = 0;
+  for (let i = 0; i < line - 1; i++) pos += lines[i].length + 1;
+  el.codeEditor.focus();
+  el.codeEditor.selectionStart = pos;
+  el.codeEditor.selectionEnd = pos;
+  const lineHeight = parseFloat(getComputedStyle(el.codeEditor).lineHeight);
+  el.codeEditor.scrollTop = (line - 1) * lineHeight;
+  syncScroll();
+}
+
+// ===== EDITOR SYNC =====
+function updateLineNumbers() {
+  const text = el.codeEditor.value || '';
+  const lines = text.split(/\r?\n/);
+  let html = '';
+  for (let i = 0; i < lines.length; i++) {
+    html += (i + 1) + '\n';
+  }
+  el.lineNumbersContent.textContent = html;
+}
+
+function syncScroll() {
+  const scrollTop = el.codeEditor.scrollTop;
+  const scrollLeft = el.codeEditor.scrollLeft;
+  
+  el.lineNumbers.scrollTop = scrollTop;
+  el.highlightLayer.scrollTop = scrollTop;
+  el.highlightLayer.scrollLeft = scrollLeft;
+}
+
+el.codeEditor.addEventListener('input', () => {
+  updateLineNumbers();
+  saveEditorToTrack();
+  updateHighlights();
+});
+
+el.codeEditor.addEventListener('scroll', syncScroll);
+
+// ===== TRACK MANAGEMENT =====
+function createTrack(name) {
+  const track = {
+    id: uid('track'),
+    name: name || `Track ${Project.tracks.length + 1}`,
+    color: randomColor(),
+    code: '',
+    events: []
+  };
+  Project.tracks.push(track);
+  renderTabs();
+  renderTrackList();
+  selectTrack(track.id);
+  return track;
+}
+
+function deleteTrack(id) {
+  if (Project.tracks.length <= 1) {
+    alert('At least one track must remain.');
+    return;
+  }
+  const idx = Project.tracks.findIndex(t => t.id === id);
+  if (idx >= 0) Project.tracks.splice(idx, 1);
+  renderTabs();
+  renderTrackList();
+  if (Project.tracks.length) selectTrack(Project.tracks[0].id);
+}
+
+function renameTrack(id, name) {
+  const track = Project.tracks.find(t => t.id === id);
+  if (!track) return;
+  const newName = (name || '').trim() || track.name;
+  if (newName && newName.length <= 100) track.name = newName;
+  renderTabs();
+  renderTrackList();
+}
+
+function selectTrack(id) {
+  const track = Project.tracks.find(t => t.id === id);
+  if (!track) return;
+  
+  selectedTrackId = id;
+  el.codeEditor.value = track.code || '';
+  updateLineNumbers();
+  renderTabs();
+  renderTrackList();
+  updateHighlights();
+  el.codeEditor.focus();
+}
+
+function saveEditorToTrack() {
+  const track = Project.tracks.find(t => t.id === selectedTrackId);
+  if (track) track.code = el.codeEditor.value;
+}
+
+// ===== RENDER UI =====
+function renderTabs() {
+  el.tabs.innerHTML = '';
+  
+  Project.tracks.forEach(track => {
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (track.id === selectedTrackId ? ' active' : '');
+    tab.innerHTML = `
+      <span style="width:10px;height:10px;border-radius:50%;background:${track.color};display:inline-block;flex-shrink:0"></span>
+      <span>${escapeHtml(track.name)}</span>
+      <span class="close">✕</span>
+    `;
+    tab.addEventListener('click', (e) => {
+      if (e.target.classList.contains('close')) {
+        if (confirm(`Delete track "${track.name}"?`)) deleteTrack(track.id);
+        return;
+      }
+      selectTrack(track.id);
+    });
+    el.tabs.appendChild(tab);
+  });
+  
+  const plus = document.createElement('div');
+  plus.className = 'tab-plus';
+  plus.textContent = '+';
+  plus.addEventListener('click', () => createTrack());
+  el.tabs.appendChild(plus);
+}
+
+function renderTrackList() {
+  el.trackList.innerHTML = '';
+  
+  Project.tracks.forEach(track => {
+    const div = document.createElement('div');
+    div.className = 'track-item' + (track.id === selectedTrackId ? ' selected' : '');
+    
+    const state = playbackState.tracks[track.id];
+    let statusText = '';
+    if (playbackState.playing && state && state.activeLines && state.activeLines.size > 0) {
+      const lines = Array.from(state.activeLines).sort((a, b) => a - b);
+      statusText = '▶ line ' + lines.join(', ');
+    }
+    
+    div.innerHTML = `
+      <div class="track-dot" style="background:${track.color}"></div>
+      <div class="track-name">${escapeHtml(track.name)}</div>
+      <div class="track-status">${escapeHtml(statusText)}</div>
+    `;
+    
+    div.addEventListener('click', () => selectTrack(track.id));
+    el.trackList.appendChild(div);
+  });
+}
+
+function updateHighlights() {
+  const text = el.codeEditor.value || '';
+  const lines = text.split(/\r?\n/);
+  const track = Project.tracks.find(t => t.id === selectedTrackId);
+  const state = playbackState.tracks[selectedTrackId];
+  const playingLines = state && state.activeLines ? new Set(state.activeLines) : new Set();
+  
+  let html = '';
+  for (let i = 0; i < lines.length; i++) {
+    const lineNum = i + 1;
+    const cls = playingLines.has(lineNum) ? 'highlight-row playing' : 'highlight-row';
+    html += `<div class="${cls}"></div>`;
+  }
+  
+  el.highlightLayer.innerHTML = html;
+  syncScroll();
+}
+
+// ===== LENGTH PARSING =====
+function parseLengthToBeats(token) {
+  if (token == null) return null;
+  const s = String(token).trim();
+  const dotted = s.endsWith('+');
+  const core = dotted ? s.slice(0, -1) : s;
+  
+  if (!/^\d+$/.test(core)) return null;
+  const n = parseInt(core, 10);
+  if (n <= 0) return null;
+  
+  let beats = 4.0 / n;
+  if (dotted) beats *= 1.5;
+  return beats;
+}
+
+// ===== NOTE PARSING =====
+function noteToMidi(noteStr, key = 'C', bypass = false) {
+  const m = String(noteStr).match(/^([A-Ga-g][#b]?)(-?\d+)$/);
+  if (!m) throw new Error(`Invalid pitch: ${noteStr}`);
+  
+  const name = m[1][0].toUpperCase() + (m[1][1] || '');
+  const octave = parseInt(m[2], 10);
+  
+  if (!(name in NOTE_TABLE)) throw new Error(`Invalid note name: ${name}`);
+  
+  let base = NOTE_TABLE[name];
+  let midi = (octave + 1) * 12 + base;
+  
+  if (!bypass && key in KEY_SCALES) {
+    const scale = KEY_SCALES[key];
+    const semitone = base % 12;
+    if (!scale.includes(semitone)) {
+      const best = scale.reduce((a, b) => Math.abs((a - semitone + 6) % 12 - 6) < Math.abs((b - semitone + 6) % 12 - 6) ? a : b);
+      midi = (octave + 1) * 12 + best;
+    }
+  }
+  
+  if (midi < 0 || midi > 127) throw new Error(`MIDI out of range: ${noteStr}`);
+  return midi;
+}
+
+function midiToFreq(midi) {
+  return 440.0 * Math.pow(2, (midi - 69) / 12);
+}
+
+function midiToNoteName(midi) {
+  const names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const octave = Math.floor(midi / 12) - 1;
+  const note = names[midi % 12];
+  return `${note}${octave}`;
+}
+
+// ===== PARSER =====
+function parseNoteToken(tok) {
+  let s = String(tok).trim();
+  if (s.toLowerCase() === 'null') return { pitch: null, slur: false, bypass: false };
+  
+  let slur = false, bypass = false;
+  if (s.endsWith('~!') || s.endsWith('!~')) {
+    slur = true;
+    bypass = true;
+    s = s.slice(0, -2);
+  } else if (s.endsWith('~')) {
+    slur = true;
+    s = s.slice(0, -1);
+  } else if (s.endsWith('!')) {
+    bypass = true;
+    s = s.slice(0, -1);
+  }
+  
+  return { pitch: s, slur, bypass };
+}
+
+function stripQuotes(str) {
+  return String(str).replace(/^["']|["']$/g, '');
+}
+
+function splitArgs(text) {
+  const out = [];
+  let cur = '';
+  let depth = 0;
+  let inQuote = false;
+  let qchar = '';
+  
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    
+    if (inQuote) {
+      cur += ch;
+      if (ch === qchar && text[i - 1] !== '\\') inQuote = false;
+      continue;
+    }
+    
+    if (ch === '"' || ch === "'") {
+      inQuote = true;
+      qchar = ch;
+      cur += ch;
+      continue;
+    }
+    
+    if (ch === '[') { depth++; cur += ch; continue; }
+    if (ch === ']') { depth--; cur += ch; continue; }
+    if (ch === ',' && depth === 0) {
+      if (cur.trim()) out.push(cur.trim());
+      cur = '';
+      continue;
+    }
+    
+    cur += ch;
+  }
+  
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+
+function parseTrack(track) {
+  const code = track.code || '';
+  const lines = code.split(/\r?\n/);
+  const events = [];
+  let tempo = Project.tempo || 120;
+  let cursor = 0;
+  
+  for (let li = 0; li < lines.length; li++) {
+    const rawLine = lines[li].trim();
+    if (!rawLine) continue;
+    
+    try {
+      // tempoconst
+      let m = rawLine.match(/^tempoconst\s*=\s*["']?([\d.]+)["']?;?$/i);
+      if (m) { tempo = parseFloat(m[1]); Project.tempo = tempo; continue; }
+      
+      // newtempo
+      m = rawLine.match(/^newtempo\s*=\s*["']?([\d.]+)["']?;?$/i);
+      if (m) { tempo = parseFloat(m[1]); Project.tempo = tempo; continue; }
+      
+      // key
+      m = rawLine.match(/^key\s*=\s*["']?([A-Ga-g][#b]?m?)["']?;?$/i);
+      if (m) { Project.key = m[1]; continue; }
+      
+      // sleep
+      m = rawLine.match(/^sleep\s*\(\s*(\d+\+?)\s*\)\s*;?$/i);
+      if (m) { cursor += parseLengthToBeats(m[1]) || 0; continue; }
+      
+      // snd with optional -cnt-
+      m = rawLine.match(/snd\s*\((.*?)\)(?:\s*-cnt-\s*|;)?$/i);
+      if (m) {
+        const inside = m[1];
+        const args = splitArgs(inside);
+        if (args.length < 3) throw new Error('snd requires instrument,length,pitch');
+        
+        let inst = stripQuotes(args[0]).toLowerCase();
+        if (!VALID_INSTRUMENTS.has(inst)) throw new Error(`Unknown instrument: ${inst}`);
+        
+        const beats = parseLengthToBeats(args[1]);
+        if (beats === null) throw new Error(`Invalid length: ${args[1]}`);
+        
+        let notes = [];
+        const pitchArg = args[2].trim();
+        
+        if (pitchArg.toLowerCase().startsWith('fsn=')) {
+          const match = pitchArg.match(/fsn\s*=\s*\[(.*)\]$/i);
+          if (!match) throw new Error('fsn bracket error');
+          const noteStrs = splitArgs(match[1]);
+          notes = noteStrs.map(n => parseNoteToken(n.trim()));
+        } else {
+          notes = [parseNoteToken(pitchArg)];
+        }
+        
+        let lyric = null;
+        let className = null;
+        
+        for (let i = 3; i < args.length; i++) {
+          const attr = args[i];
+          if (attr.includes('=')) {
+            const [key, val] = attr.split('=', 2);
+            if (key.trim().toLowerCase() === 'lyric') {
+              lyric = stripQuotes(val);
+            } else if (key.trim().toLowerCase() === 'class') {
+              className = stripQuotes(val);
+            }
+          }
+        }
+        
+        const ev = {
+          id: uid('ev'),
+          trackId: track.id,
+          trackName: track.name,
+          sourceLine: li + 1,
+          instrument: inst,
+          notes,
+          beats,
+          duration: beats * 60.0 / tempo,
+          startSec: cursor * 60.0 / tempo,
+          className,
+          lyric
+        };
+        
+        events.push(ev);
+        
+        const cntAfter = rawLine.includes('-cnt-') && rawLine.indexOf(m[0]) + m[0].length < rawLine.indexOf('-cnt-');
+        if (!cntAfter) cursor += beats;
+      }
+      
+    } catch (err) {
+      swsError(li + 1, 'ParseError', err.message);
+      return [];
+    }
+  }
+  
+  track.events = events;
+  return events;
+}
+
+function compileProject() {
+  eventMap.clear();
+  Project.tracks.forEach(t => t.events = []);
+  const allEvents = [];
+  
+  Project.tracks.forEach(track => {
+    const events = parseTrack(track);
+    events.forEach(ev => allEvents.push(ev));
+  });
+  
+  allEvents.sort((a, b) => a.startSec - b.startSec || (a.trackId > b.trackId ? 1 : -1));
+  allEvents.forEach(e => eventMap.set(e.id, e));
+  
+  return allEvents;
+}
+
+// ===== PLAYBACK =====
+function ensureAudioContext() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) {
+      swsError(0, 'AudioError', 'Web Audio API not supported');
+      return null;
+    }
+    audioCtx = new AC();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {
+      swsError(0, 'AudioError', 'AudioContext resume failed');
+    });
+  }
+  return audioCtx;
+}
+
+function getOscType(inst) {
+  const t = (inst || '').toLowerCase();
+  if (t.includes('sine')) return 'sine';
+  if (t.includes('square')) return 'square';
+  if (t.includes('triangle')) return 'triangle';
+  if (t.includes('saw')) return 'sawtooth';
+  return 'sine';
+}
+
+function stopPlayback(internal = false) {
+  playbackState.timers.forEach(id => clearTimeout(id));
+  playbackState.timers = [];
+  
+  playbackState.nodes.forEach(node => {
+    try { node.osc.stop(); } catch (e) {}
+    try { node.osc.disconnect(); } catch (e) {}
+    try { node.gain.disconnect(); } catch (e) {}
+  });
+  playbackState.nodes = [];
+  
+  playbackState.playing = false;
+  Object.values(playbackState.tracks || {}).forEach(s => {
+    s.activeLines = new Set();
+    s.activeEvents = new Set();
+  });
+  
+  renderTrackList();
+  updateHighlights();
+  el.playBtn.disabled = false;
+  el.stopBtn.disabled = true;
+  
+  if (!internal) log('Stopped', 'info');
+}
+
+el.playBtn.addEventListener('click', () => {
+  if (playbackState.playing) return;
+  
+  saveEditorToTrack();
+  const events = compileProject();
+  
+  if (!events.length) {
+    log('No events to play', 'info');
+    return;
+  }
+  
+  const ac = ensureAudioContext();
+  if (!ac) return;
+  
+  stopPlayback(true);
+  
+  playbackState.playing = true;
+  playbackState.startTime = ac.currentTime;
+  
+  Project.tracks.forEach(t => {
+    playbackState.tracks[t.id] = {
+      activeLines: new Set(),
+      activeEvents: new Set()
+    };
+  });
+  
+  log(`Found ${events.length} events`, 'info');
+  log('Playing...', 'info');
+  el.playBtn.disabled = true;
+  el.stopBtn.disabled = false;
+  
+  const offset = 0.05;
+  const base = ac.currentTime + offset;
+  
+  events.forEach(ev => {
+    const startTime = base + ev.startSec;
+    const endTime = startTime + ev.duration;
+    
+    ev.notes.forEach(noteObj => {
+      if (!noteObj || noteObj.pitch === null) return;
+      
+      try {
+        const midi = noteToMidi(noteObj.pitch, Project.key, noteObj.bypass);
+        const freq = midiToFreq(midi);
+        
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        
+        osc.type = getOscType(ev.instrument);
+        osc.frequency.setValueAtTime(freq, startTime);
+        
+        const attack = Math.min(0.02, ev.duration * 0.15);
+        const release = Math.min(0.1, ev.duration * 0.25);
+        
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.25, startTime + attack);
+        gain.gain.setValueAtTime(0.25, endTime - release);
+        gain.gain.linearRampToValueAtTime(0, endTime);
+        
+        osc.connect(gain);
+        gain.connect(ac.destination);
+        
+        osc.start(startTime);
+        osc.stop(endTime + 0.02);
+        
+        playbackState.nodes.push({ osc, gain });
+      } catch (err) {
+        console.warn('Note error:', err);
+      }
+    });
+    
+    const tstate = playbackState.tracks[ev.trackId];
+    if (!tstate) return;
+    
+    const msStart = Math.max(0, Math.round((startTime - ac.currentTime) * 1000));
+    const startTimer = setTimeout(() => {
+      if (!playbackState.playing) return;
+      tstate.activeLines.add(ev.sourceLine);
+      tstate.activeEvents.add(ev.id);
+      renderTrackList();
+      updateHighlights();
+    }, msStart);
+    playbackState.timers.push(startTimer);
+    
+    const msEnd = Math.max(0, Math.round((endTime - ac.currentTime) * 1000));
+    const endTimer = setTimeout(() => {
+      if (!playbackState.playing) return;
+      tstate.activeLines.delete(ev.sourceLine);
+      tstate.activeEvents.delete(ev.id);
+      renderTrackList();
+      updateHighlights();
+    }, msEnd + 10);
+    playbackState.timers.push(endTimer);
+  });
+  
+  const maxEnd = events.reduce((m, e) => Math.max(m, e.startSec + e.duration), 0);
+  const stopTimer = setTimeout(() => {
+    if (playbackState.playing) {
+      log('Playback finished', 'info');
+      stopPlayback(true);
+    }
+  }, Math.round((maxEnd + offset) * 1000) + 300);
+  playbackState.timers.push(stopTimer);
+  
+  renderTrackList();
+  updateHighlights();
+});
+
+el.stopBtn.addEventListener('click', () => stopPlayback());
+
+// ===== FILE I/O =====
+el.openBtn.addEventListener('click', () => el.fileInput.click());
+
+el.fileInput.addEventListener('change', (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const content = ev.target.result;
+      const name = (file.name || '').toLowerCase();
+      
+      if (name.endsWith('.ust')) {
+        const ss = convertUstToSs(content);
+        loadSsIntoProject(ss);
+        log('Loaded UST and converted to SS', 'success');
+      } else {
+        loadSsIntoProject(content);
+        log('Loaded SS', 'success');
+      }
+    } catch (err) {
+      swsError(0, 'FileError', 'Failed to read/parse file: ' + err.message);
+    }
+  };
+  reader.onerror = () => swsError(0, 'FileError', 'Failed to read file');
+  reader.readAsText(file);
+  el.fileInput.value = '';
+});
+
+function convertUstToSs(ustText) {
+  const lines = ustText.split(/\r?\n/);
+  let out = `tempoconst="${Project.tempo}";\nkey="${Project.key}";\n\n`;
+  let inNote = false;
+  let noteData = {};
+  
+  lines.forEach((line) => {
+    const l = line.trim();
+    
+    if (l.startsWith('[#')) {
+      if (inNote && noteData.NoteNum) {
+        const len = parseInt(noteData.Length || '480', 10);
+        const beats = len / 480;
+        const midi = parseInt(noteData.NoteNum, 10);
+        const pitch = midiToNoteName(midi);
+        const lyric = noteData.Lyric || 'R';
+        
+        if (lyric.toUpperCase() === 'R') {
+          out += `sleep(${beatsToDenom(beats)});\n`;
+        } else {
+          out += `snd("synth",${beatsToDenom(beats)},${pitch},Lyric="${lyric}");\n`;
+        }
+      }
+      
+      if (l.includes('TRACKEND')) {
+        inNote = false;
+        noteData = {};
+        return;
+      }
+      
+      inNote = /^\[#\d+\]$/.test(l);
+      noteData = {};
+      return;
+    }
+    
+    if (inNote && l.includes('=')) {
+      const [key, val] = l.split('=', 2);
+      noteData[key.trim()] = val.trim();
+    }
+  });
+  
+  if (inNote && noteData.NoteNum) {
+    const len = parseInt(noteData.Length || '480', 10);
+    const beats = len / 480;
+    const midi = parseInt(noteData.NoteNum, 10);
+    const pitch = midiToNoteName(midi);
+    const lyric = noteData.Lyric || 'R';
+    
+    if (lyric.toUpperCase() === 'R') {
+      out += `sleep(${beatsToDenom(beats)});\n`;
+    } else {
+      out += `snd("synth",${beatsToDenom(beats)},${pitch},Lyric="${lyric}");\n`;
+    }
+  }
+  
+  return out;
+}
+
+function beatsToDenom(beats) {
+  if (beats <= 0) return '4';
+  const denom = 4.0 / beats;
+  if (denom === Math.round(denom)) {
+    return String(Math.round(denom));
+  }
+  const dotted = denom / 1.5;
+  if (dotted === Math.round(dotted)) {
+    return String(Math.round(dotted)) + '+';
+  }
+  return String(Math.round(denom));
+}
+
+function loadSsIntoProject(ssText) {
+  const lines = ssText.split(/\r?\n/);
+  const classNames = [];
+  
+  lines.forEach(line => {
+    const m = line.match(/class\s*=\s*["']([^"']+)["']/i);
+    if (m) classNames.push(m[1]);
+  });
+  
+  if (classNames.length > 0) {
+    const unique = [...new Set(classNames)];
+    Project.tracks = [];
+    unique.forEach(name => createTrack(name));
+    
+    lines.forEach(line => {
+      const m = line.match(/class\s*=\s*["']([^"']+)["']/i);
+      if (m) {
+        const name = m[1];
+        const track = Project.tracks.find(t => t.name === name);
+        if (track) {
+          track.code += line.replace(/class\s*=\s*["'][^"']+["']/i, '').trim() + '\n';
+        }
+      } else {
+        if (Project.tracks[0]) {
+          Project.tracks[0].code += line + '\n';
+        }
+      }
+    });
+  } else {
+    if (!selectedTrackId || Project.tracks.length === 0) {
+      Project.tracks = [];
+      createTrack('Track 1');
+    }
+    const track = Project.tracks.find(t => t.id === selectedTrackId) || Project.tracks[0];
+    track.code = ssText;
+  }
+  
+  renderTabs();
+  renderTrackList();
+  if (Project.tracks.length) selectTrack(Project.tracks[0].id);
+}
+
+el.saveBtn.addEventListener('click', () => {
+  saveEditorToTrack();
+  
+  let out = `tempoconst="${Project.tempo}";\nkey="${Project.key}";\n\n`;
+  
+  Project.tracks.forEach(track => {
+    const trackLines = (track.code || '').split(/\r?\n/);
+    trackLines.forEach(line => {
+      if (!line.trim()) {
+        out += '\n';
+        return;
+      }
+      
+      if (/snd\s*\(.*\)\s*;?\s*$/.test(line) && !/class\s*=/.test(line)) {
+        const idx = line.lastIndexOf(')');
+        if (idx > 0) {
+          const prefix = line.slice(0, idx);
+          const suffix = line.slice(idx);
+          out += prefix + (prefix.endsWith(',') ? `class="${track.name}"` : `,class="${track.name}"`) + suffix + '\n';
+        } else {
+          out += line + '\n';
+        }
+      } else {
+        out += line + '\n';
+      }
+    });
+    out += '\n';
+  });
+  
+  const blob = new Blob([out], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'project.ss';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  log('Saved project.ss', 'success');
+});
+
+el.exportSsBtn.addEventListener('click', () => el.saveBtn.click());
+
+// ===== TRACK BUTTONS =====
+el.addTrackBtn.addEventListener('click', () => createTrack());
+
+el.renameTrackBtn.addEventListener('click', () => {
+  if (!selectedTrackId) {
+    alert('Select a track first');
+    return;
+  }
+  const track = Project.tracks.find(t => t.id === selectedTrackId);
+  if (!track) return;
+  const name = prompt('New track name:', track.name);
+  if (name) renameTrack(track.id, name);
+});
+
+el.deleteTrackBtn.addEventListener('click', () => {
+  if (!selectedTrackId) {
+    alert('Select a track first');
+    return;
+  }
+  if (confirm('Delete this track?')) {
+    deleteTrack(selectedTrackId);
+  }
+});
+
+// ===== UPDATE PROJECT INFO =====
+setInterval(() => {
+  el.projectInfo.textContent = `tempo=${Project.tempo} key=${Project.key}`;
+}, 500);
+
+// ===== INITIALIZATION =====
+function init() {
+  Project.tracks = [];
+  const track = createTrack('Track 1');
+  track.code = `tempoconst="120";\nkey="C";\n\nsnd("synth",4,C4);\nsnd("synth",4,E4)-cnt-snd("synth",4,G4);\n`;
+  selectTrack(track.id);
+  
+  playbackState.tracks = {};
+  Project.tracks.forEach(t => {
+    playbackState.tracks[t.id] = { activeLines: new Set(), activeEvents: new Set() };
+  });
+  
+  log('SWS Web Console initialized', 'info');
+}
+
+init();
+
+// Expose for dev
+window.SWS = { Project, parseTrack, compileProject, playbackState, log };
+
+})();
+
+// ===== TEMPO MAP =====
+class TempoMap {
+  constructor(initialTempo = 120) {
+    this.segments = [[0, initialTempo]];
+  }
+  
+  setTempo(beatPos, tempo) {
+    this.segments = this.segments.filter(([b]) => b !== beatPos);
+    this.segments.push([beatPos, tempo]);
+    this.segments.sort((a, b) => a[0] - b[0]);
+  }
+  
+  beatToSeconds(beatPos) {
+    if (beatPos < 0) return 0;
+    let totalSec = 0;
+    this.segments.sort((a, b) => a[0] - b[0]);
+    
+    for (let i = 0; i < this.segments.length; i++) {
+      const [segBeat, tempo] = this.segments[i];
+      if (beatPos <= segBeat) break;
+      
+      let nextBeat, beatsInSeg;
+      if (i + 1 < this.segments.length) {
+        nextBeat = this.segments[i + 1][0];
+        beatsInSeg = Math.min(nextBeat - segBeat, beatPos - segBeat);
+      } else {
+        beatsInSeg = beatPos - segBeat;
+      }
+      
+      totalSec += beatsInSeg * 60.0 / tempo;
+    }
+    
+    return totalSec;
+  }
+  
+  getTempoAt(beatPos) {
+    for (let i = this.segments.length - 1; i >= 0; i--) {
+      if (beatPos >= this.segments[i][0]) return this.segments[i][1];
+    }
+    return this.segments[0][1];
+  }
+}
+
+// ===== CHIPS SYSTEM =====
+function parseChips(track) {
+  const code = track.code || '';
+  const lines = code.split(/\r?\n/);
+  const chips = new Map();
+  let i = 0;
+  
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    
+    // chips name() { ... }
+    const m = line.match(/^chips\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)\s*\{\s*$/i);
+    if (m) {
+      const name = m[1];
+      const blockLines = [];
+      let depth = 1;
+      i++;
+      
+      while (i < lines.length && depth > 0) {
+        const l = lines[i];
+        depth += (l.split('{').length - 1);
+        depth -= (l.split('}').length - 1);
+        
+        if (depth > 0) blockLines.push(l);
+        i++;
+      }
+      
+      if (depth === 0) {
+        const blockCode = blockLines.join('\n');
+        chips.set(name, blockCode);
+      }
+      continue;
+    }
+    
+    i++;
+  }
+  
+  return chips;
+}
+
+function expandChips(code, chips, maxDepth = 10) {
+  if (maxDepth <= 0) throw new Error('Chips recursion too deep');
+  
+  let result = code;
+  let changed = true;
+  
+  while (changed) {
+    changed = false;
+    for (const [name, body] of chips) {
+      const pattern = new RegExp(`chips\\s*\\(\\s*${name}\\s*\\)\\s*;?`, 'gi');
+      if (pattern.test(result)) {
+        result = result.replace(pattern, body);
+        changed = true;
+      }
+    }
+  }
+  
+  return result;
+}
+
+// ===== LP SYSTEM =====
+function expandLp(code) {
+  const lines = code.split(/\r?\n/);
+  let result = [];
+  let i = 0;
+  
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    
+    // lp(N) { ... }
+    const m = line.match(/^lp\s*\(\s*(\d+)\s*\)\s*\{\s*$/i);
+    if (m) {
+      const loops = parseInt(m[1], 10);
+      const blockLines = [];
+      let depth = 1;
+      i++;
+      
+      while (i < lines.length && depth > 0) {
+        const l = lines[i];
+        depth += (l.split('{').length - 1);
+        depth -= (l.split('}').length - 1);
+        
+        if (depth > 0) blockLines.push(l);
+        i++;
+      }
+      
+      if (depth === 0) {
+        const blockCode = blockLines.join('\n');
+        for (let r = 0; r < loops; r++) {
+          result.push(blockCode);
+        }
+      }
+      continue;
+    }
+    
+    result.push(line);
+    i++;
+  }
+  
+  return result.join('\n');
+}
+
+// ===== SLUR ANALYSIS =====
+function analyzeSlurs(events) {
+  for (let i = 0; i < events.length; i++) {
+    const event = events[i];
+    
+    for (let noteIdx = 0; noteIdx < event.notes.length; noteIdx++) {
+      const note = event.notes[noteIdx];
+      if (!note || !note.slur) continue;
+      
+      let found = false;
+      const targetPitch = note.pitch;
+      
+      for (let j = i + 1; j < events.length; j++) {
+        const nextEvent = events[j];
+        
+        if (!nextEvent.notes || nextEvent.notes.length === 0) continue;
+        
+        for (let nextNoteIdx = 0; nextNoteIdx < nextEvent.notes.length; nextNoteIdx++) {
+          const nextNote = nextEvent.notes[nextNoteIdx];
+          if (!nextNote || nextNote.pitch !== targetPitch) continue;
+          
+          // Check temporal adjacency
+          if (Math.abs(nextEvent.startSec - event.startSec - event.duration) < 1e-6) {
+            found = true;
+            break;
+          }
+          
+          // Check same start (chordal)
+          if (Math.abs(nextEvent.startSec - event.startSec) < 1e-6 &&
+              Math.abs(nextEvent.duration - event.duration) < 1e-6) {
+            found = true;
+            break;
+          }
+        }
+        
+        if (found) break;
+        
+        // Stop searching if we've passed the slur window
+        if (nextEvent.startSec > event.startSec + event.duration + 0.1) break;
+      }
+      
+      if (!found) {
+        throw new Error(`Slur target not found for ${targetPitch} at line ${event.sourceLine}`);
+      }
+    }
+  }
+}
+
+// ===== UST PARSER (Improved) =====
+function parseUstFile(ustText) {
+  const lines = ustText.split(/\r?\n/);
+  let tempo = 120;
+  let notes = [];
+  let section = null;
+  let currentNote = {};
+  let currentNoteLine = 0;
+  
+  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+    const line = lines[lineIdx].trim();
+    
+    if (!line) continue;
+    
+    // Section header
+    if (line.startsWith('[#')) {
+      const inside = line.slice(2, -1);
+      
+      if (inside === 'TRACKEND') {
+        if (Object.keys(currentNote).length > 0) {
+          notes.push(processUstNote(currentNote, currentNoteLine));
+        }
+        break;
+      }
+      
+      if (inside === 'SETTING') {
+        if (Object.keys(currentNote).length > 0) {
+          notes.push(processUstNote(currentNote, currentNoteLine));
+        }
+        currentNote = {};
+        section = 'SETTING';
+        continue;
+      }
+      
+      if (/^\d+$/.test(inside)) {
+        if (Object.keys(currentNote).length > 0) {
+          notes.push(processUstNote(currentNote, currentNoteLine));
+        }
+        currentNote = {};
+        currentNoteLine = lineIdx + 1;
+        section = 'NOTE';
+        continue;
+      }
+    }
+    
+    // Key=value
+    if (line.includes('=')) {
+      const [key, val] = line.split('=', 2);
+      const k = key.trim();
+      const v = val.trim();
+      
+      if (section === 'SETTING') {
+        if (k === 'Tempo') {
+          const t = parseFloat(v);
+          if (!isNaN(t) && t > 0) tempo = t;
+        }
+      } else if (section === 'NOTE') {
+        currentNote[k] = v;
+      }
+    }
+  }
+  
+  if (Object.keys(currentNote).length > 0) {
+    notes.push(processUstNote(currentNote, currentNoteLine));
+  }
+  
+  return { tempo, notes };
+}
+
+function processUstNote(noteDict, line) {
+  const lyric = (noteDict.Lyric || '').trim();
+  const noteNumStr = noteDict.NoteNum || '60';
+  const lengthStr = noteDict.Length || '480';
+  
+  let noteNum = parseInt(noteNumStr, 10);
+  if (isNaN(noteNum)) noteNum = 60;
+  if (noteNum < 0 || noteNum > 127) noteNum = 60;
+  
+  let length = parseInt(lengthStr, 10);
+  if (isNaN(length) || length <= 0) length = 480;
+  
+  const beats = length / 480;
+  const isRest = lyric.toUpperCase() === 'R' || !lyric;
+  
+  return { noteNum, length, beats, lyric, isRest, line };
+}
+
+function generateSsFromUst(ustData) {
+  const { tempo, notes } = ustData;
+  let ss = `tempoconst="${tempo.toFixed(2)}";\nkey="C";\n\n`;
+  
+  notes.forEach(note => {
+    if (note.isRest) {
+      const denom = beatsToDenom(note.beats);
+      ss += `sleep(${denom});\n`;
+    } else {
+      const pitch = midiToNoteName(note.noteNum);
+      const denom = beatsToDenom(note.beats);
+      const lyricAttr = note.lyric ? `,Lyric="${note.lyric}"` : '';
+      ss += `snd("synth",${denom},${pitch}${lyricAttr});\n`;
+    }
+  });
+  
+  return ss;
+}
+
+// ===== TRACK CURSOR MANAGEMENT =====
+const trackCursors = new Map();
+
+function getTrackCursor(trackId) {
+  if (!trackCursors.has(trackId)) {
+    trackCursors.set(trackId, 0);
+  }
+  return trackCursors.get(trackId);
+}
+
+function setTrackCursor(trackId, value) {
+  trackCursors.set(trackId, value);
+}
+
+function advanceTrackCursor(trackId, beats, tempo) {
+  const current = getTrackCursor(trackId);
+  setTrackCursor(trackId, current + beats);
+}
+
+// ===== IMPROVED PARSE TRACK (with cursor & cnt support) =====
+function parseTrackWithCursor(track, tempo) {
+  const code = track.code || '';
+  
+  // Pre-process: expand lp() and chips()
+  const chips = parseChips(track);
+  let expandedCode = expandLp(code);
+  expandedCode = expandChips(expandedCode, chips);
+  
+  const lines = expandedCode.split(/\r?\n/);
+  const events = [];
+  
+  let cursor = getTrackCursor(track.id);
+  let currentTempo = tempo;
+  
+  for (let li = 0; li < lines.length; li++) {
+    let rawLine = lines[li].trim();
+    if (!rawLine) continue;
+    
+    try {
+      // tempoconst / newtempo / key
+      let m = rawLine.match(/^tempoconst\s*=\s*["']?([\d.]+)["']?;?$/i);
+      if (m) {
+        currentTempo = parseFloat(m[1]);
+        Project.tempo = currentTempo;
+        continue;
+      }
+      
+      m = rawLine.match(/^newtempo\s*=\s*["']?([\d.]+)["']?;?$/i);
+      if (m) {
+        currentTempo = parseFloat(m[1]);
+        Project.tempo = currentTempo;
+        continue;
+      }
+      
+      m = rawLine.match(/^key\s*=\s*["']?([A-Ga-g][#b]?m?)["']?;?$/i);
+      if (m) {
+        Project.key = m[1];
+        continue;
+      }
+      
+      // sleep
+      m = rawLine.match(/^sleep\s*\(\s*(\d+\+?)\s*\)\s*;?$/i);
+      if (m) {
+        const beats = parseLengthToBeats(m[1]);
+        if (beats !== null) {
+          cursor += beats;
+        }
+        continue;
+      }
+      
+      // Handle -cnt- grouping
+      const cntParts = rawLine.split(/-cnt-/i);
+      let groupCursor = cursor;
+      
+      for (const part of cntParts) {
+        const trimmed = part.trim();
+        if (!trimmed) continue;
+        
+        m = trimmed.match(/snd\s*\((.*?)\)\s*;?$/i);
+        if (m) {
+          const inside = m[1];
+          const args = splitArgs(inside);
+          
+          if (args.length < 3) {
+            throw new Error('snd requires instrument,length,pitch');
+          }
+          
+          let inst = stripQuotes(args[0]).toLowerCase();
+          if (!VALID_INSTRUMENTS.has(inst)) {
+            throw new Error(`Unknown instrument: ${inst}`);
+          }
+          
+          const beats = parseLengthToBeats(args[1]);
+          if (beats === null) {
+            throw new Error(`Invalid length: ${args[1]}`);
+          }
+          
+          let notes = [];
+          const pitchArg = args[2].trim();
+          
+          if (pitchArg.toLowerCase().startsWith('fsn=')) {
+            const match = pitchArg.match(/fsn\s*=\s*\[(.*)\]$/i);
+            if (!match) throw new Error('fsn bracket error');
+            const noteStrs = splitArgs(match[1]);
+            notes = noteStrs.map(n => parseNoteToken(n.trim()));
+          } else {
+            notes = [parseNoteToken(pitchArg)];
+          }
+          
+          let lyric = null;
+          let className = null;
+          
+          for (let i = 3; i < args.length; i++) {
+            const attr = args[i];
+            if (attr.includes('=')) {
+              const [key, val] = attr.split('=', 2);
+              if (key.trim().toLowerCase() === 'lyric') {
+                lyric = stripQuotes(val);
+              } else if (key.trim().toLowerCase() === 'class') {
+                className = stripQuotes(val);
+              }
+            }
+          }
+          
+          const ev = {
+            id: uid('ev'),
+            trackId: track.id,
+            trackName: track.name,
+            sourceLine: li + 1,
+            instrument: inst,
+            notes,
+            beats,
+            duration: beats * 60.0 / currentTempo,
+            startSec: groupCursor * 60.0 / currentTempo,
+            className,
+            lyric
+          };
+          
+          events.push(ev);
+          
+          // -cnt- means stay at same cursor, else advance
+          if (cntParts.indexOf(part) === cntParts.length - 1) {
+            // Last part: advance cursor
+            cursor = groupCursor + beats;
+          } else {
+            // More parts: stay at groupCursor
+            groupCursor = groupCursor;
+          }
+        }
+      }
+      
+    } catch (err) {
+      swsError(li + 1, 'ParseError', err.message);
+      return [];
+    }
+  }
+  
+  setTrackCursor(track.id, cursor);
+  track.events = events;
+  return events;
+}
+
+// ===== IMPROVED COMPILE PROJECT =====
+function compileProjectImproved() {
+  eventMap.clear();
+  trackCursors.clear();
+  
+  Project.tracks.forEach(t => {
+    t.events = [];
+    setTrackCursor(t.id, 0);
+  });
+  
+  const allEvents = [];
+  
+  Project.tracks.forEach(track => {
+    const events = parseTrackWithCursor(track, Project.tempo);
+    events.forEach(ev => allEvents.push(ev));
+  });
+  
+  // Validate slurs
+  try {
+    analyzeSlurs(allEvents);
+  } catch (err) {
+    swsError(1, 'SlurError', err.message);
+    return [];
+  }
+  
+  allEvents.sort((a, b) => a.startSec - b.startSec || (a.trackId > b.trackId ? 1 : -1));
+  allEvents.forEach(e => eventMap.set(e.id, e));
+  
+  return allEvents;
+}
+
+// ===== UPDATE PLAYBACK TO USE IMPROVED COMPILE =====
+el.playBtn.removeEventListener('click', el.playBtn.onclick);
+el.playBtn.addEventListener('click', () => {
+  if (playbackState.playing) return;
+  
+  saveEditorToTrack();
+  const events = compileProjectImproved();
+  
+  if (!events.length) {
+    log('No events to play', 'info');
+    return;
+  }
+  
+  const ac = ensureAudioContext();
+  if (!ac) return;
+  
+  stopPlayback(true);
+  
+  playbackState.playing = true;
+  playbackState.startTime = ac.currentTime;
+  
+  Project.tracks.forEach(t => {
+    playbackState.tracks[t.id] = {
+      activeLines: new Set(),
+      activeEvents: new Set()
+    };
+  });
+  
+  log(`Found ${events.length} events`, 'info');
+  log('Playing...', 'info');
+  el.playBtn.disabled = true;
+  el.stopBtn.disabled = false;
+  
+  const offset = 0.05;
+  const base = ac.currentTime + offset;
+  
+  events.forEach(ev => {
+    const startTime = base + ev.startSec;
+    const endTime = startTime + ev.duration;
+    
+    ev.notes.forEach(noteObj => {
+      if (!noteObj || noteObj.pitch === null) return;
+      
+      try {
+        const midi = noteToMidi(noteObj.pitch, Project.key, noteObj.bypass);
+        const freq = midiToFreq(midi);
+        
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        
+        osc.type = getOscType(ev.instrument);
+        osc.frequency.setValueAtTime(freq, startTime);
+        
+        const attack = Math.min(0.02, ev.duration * 0.15);
+        const release = Math.min(0.1, ev.duration * 0.25);
+        
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.25, startTime + attack);
+        gain.gain.setValueAtTime(0.25, endTime - release);
+        gain.gain.linearRampToValueAtTime(0, endTime);
+        
+        osc.connect(gain);
+        gain.connect(ac.destination);
+        
+        osc.start(startTime);
+        osc.stop(endTime + 0.02);
+        
+        playbackState.nodes.push({ osc, gain });
+      } catch (err) {
+        console.warn('Note error:', err);
+      }
+    });
+    
+    const tstate = playbackState.tracks[ev.trackId];
+    if (!tstate) return;
+    
+    const msStart = Math.max(0, Math.round((startTime - ac.currentTime) * 1000));
+    const startTimer = setTimeout(() => {
+      if (!playbackState.playing) return;
+      tstate.activeLines.add(ev.sourceLine);
+      tstate.activeEvents.add(ev.id);
+      renderTrackList();
+      updateHighlights();
+    }, msStart);
+    playbackState.timers.push(startTimer);
+    
+    const msEnd = Math.max(0, Math.round((endTime - ac.currentTime) * 1000));
+    const endTimer = setTimeout(() => {
+      if (!playbackState.playing) return;
+      tstate.activeLines.delete(ev.sourceLine);
+      tstate.activeEvents.delete(ev.id);
+      renderTrackList();
+      updateHighlights();
+    }, msEnd + 10);
+    playbackState.timers.push(endTimer);
+  });
+  
+  const maxEnd = events.reduce((m, e) => Math.max(m, e.startSec + e.duration), 0);
+  const stopTimer = setTimeout(() => {
+    if (playbackState.playing) {
+      log('Playback finished', 'info');
+      stopPlayback(true);
+    }
+  }, Math.round((maxEnd + offset) * 1000) + 300);
+  playbackState.timers.push(stopTimer);
+  
+  renderTrackList();
+  updateHighlights();
+});
+
+// ===== UST FILE HANDLING IMPROVED =====
+el.fileInput.removeEventListener('change', el.fileInput.onchange);
+el.fileInput.addEventListener('change', (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const content = ev.target.result;
+      const name = (file.name || '').toLowerCase();
+      
+      if (name.endsWith('.ust')) {
+        const ustData = parseUstFile(content);
+        const ss = generateSsFromUst(ustData);
+        loadSsIntoProject(ss);
+        log('Loaded UST and converted to SS', 'success');
+      } else if (name.endsWith('.ss')) {
+        loadSsIntoProject(content);
+        log('Loaded SS', 'success');
+      } else {
+        throw new Error('Only .ss and .ust files are supported');
+      }
+    } catch (err) {
+      swsError(0, 'FileError', 'Failed to read/parse file: ' + (err.message || String(err)));
+    }
+  };
+  reader.onerror = () => swsError(0, 'FileError', 'Failed to read file');
+  reader.readAsText(file);
+  el.fileInput.value = '';
+});
+
+// ===== ERROR HANDLING: OPEN FAILURE DOESN'T DESTROY PROJECT =====
+function loadSsIntoProjectSafe(ssText) {
+  try {
+    // Create temp project
+    const tempTracks = [];
+    const lines = ssText.split(/\r?\n/);
+    const classNames = [];
+    
+    lines.forEach(line => {
+      const m = line.match(/class\s*=\s*["']([^"']+)["']/i);
+      if (m && !classNames.includes(m[1])) classNames.push(m[1]);
+    });
+    
+    if (classNames.length > 0) {
+      classNames.forEach(name => {
+        tempTracks.push({
+          id: uid('track'),
+          name,
+          color: randomColor(),
+          code: '',
+          events: []
+        });
+      });
+      
+      lines.forEach(line => {
+        const m = line.match(/class\s*=\s*["']([^"']+)["']/i);
+        if (m) {
+          const name = m[1];
+          const track = tempTracks.find(t => t.name === name);
+          if (track) {
+            track.code += line.replace(/class\s*=\s*["'][^"']+["']/i, '').trim() + '\n';
+          }
+        } else {
+          if (tempTracks[0]) {
+            tempTracks[0].code += line + '\n';
+          }
+        }
+      });
+    } else {
+      tempTracks.push({
+        id: uid('track'),
+        name: 'Track 1',
+        color: randomColor(),
+        code: ssText,
+        events: []
+      });
+    }
+    
+    // Only replace if successful
+    Project.tracks = tempTracks;
+    renderTabs();
+    renderTrackList();
+    if (Project.tracks.length) selectTrack(Project.tracks[0].id);
+    return true;
+  } catch (err) {
+    log(`Failed to load SS: ${err.message}`, 'error');
+    return false;
+  }
+}
+
+// ===== PARSER ERROR CHECKING =====
+function validateSsCode(code) {
+  const lines = code.split(/\r?\n/);
+  const errors = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line || line.startsWith('<')) continue;
+    
+    // Check for unknown statements
+    if (!/^(tempoconst|newtempo|key|sleep|snd|chips|lp|output\.|index\.|plugin|^-?cnt-?|;)/.test(line)) {
+      if (line.match(/^[a-z_]+/i)) {
+        errors.push({ line: i + 1, msg: `Unknown statement: ${line.split(/[\s(]/)[0]}` });
+      }
+    }
+  }
+  
+  return errors;
+}
+
+// ===== EXPORT SS WITH PROPER CLASS HANDLING =====
+el.saveBtn.removeEventListener('click', el.saveBtn.onclick);
+el.saveBtn.addEventListener('click', () => {
+  saveEditorToTrack();
+  
+  let out = `tempoconst="${Project.tempo}";\nkey="${Project.key}";\n\n`;
+  
+  Project.tracks.forEach(track => {
+    const trackLines = (track.code || '').split(/\r?\n/);
+    trackLines.forEach(line => {
+      if (!line.trim()) {
+        out += '\n';
+        return;
+      }
+      
+      // Auto-insert class attribute for snd() calls
+      if (/snd\s*\(.*\)\s*;?\s*$/.test(line)) {
+        if (!/class\s*=/i.test(line)) {
+          const idx = line.lastIndexOf(')');
+          if (idx > 0) {
+            const prefix = line.slice(0, idx);
+            const suffix = line.slice(idx);
+            let insertion = `,class="${escapeHtml(track.name)}"`;
+            if (prefix.trim().endsWith(',')) {
+              insertion = `class="${escapeHtml(track.name)}"`;
+            }
+            out += prefix + insertion + suffix + '\n';
+          } else {
+            out += line + '\n';
+          }
+        } else {
+          out += line + '\n';
+        }
+      } else {
+        out += line + '\n';
+      }
+    });
+    out += '\n';
+  });
+  
+  const blob = new Blob([out], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'project.ss';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  log('Saved project.ss', 'success');
+});
+
+// ===== FINAL INITIALIZATION IMPROVEMENTS =====
+function reinitProject() {
+  Project.tracks = [];
+  trackCursors.clear();
+  playbackState.tracks = {};
+  
+  const track = createTrack('Track 1');
+  track.code = `tempoconst="120";\nkey="C";\n\nsnd("synth",4,C4);\nsnd("synth",4,E4)-cnt-snd("synth",4,G4);\nsleep(4);\nsnd("piano",4,C4~);\nsnd("piano",4,C4);\n`;
+  
+  selectTrack(track.id);
+  log('Project reinitialized', 'info');
+}
+
+// ===== CONSOLE IMPROVEMENTS =====
+function clearConsole() {
+  el.consoleOutput.innerHTML = '';
+}
+
+// Expose more for debugging
+window.SWS = {
+  Project,
+  parseTrackWithCursor,
+  compileProjectImproved,
+  playbackState,
+  log,
+  clearConsole,
+  reinitProject,
+  validateSsCode,
+  trackCursors
+};
+
+// Final safety check
+window.addEventListener('beforeunload', (e) => {
+  if (playbackState.playing) {
+    stopPlayback(true);
+  }
+});
+</script>
+
+</body>
+</html>
