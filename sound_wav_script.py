@@ -226,6 +226,9 @@ class OutputRequest:
         elif self.type == "ust":
             if not output_path.lower().endswith(".ust"):
                 output_path += ".ust"
+        elif self.type == "ss":
+            if not output_path.lower().endswith(".ss"):
+                output_path += ".ss"
         
         return output_path
 
@@ -674,19 +677,18 @@ def detect_file_encoding(filepath):
 
 
 # ============================================================
-# UST PARSER
+# UST PARSER → SS CODE GENERATOR
 # ============================================================
 
 class USTParser:
-    """UST（UTAU Sequence Text）形式ファイルを解析"""
+    """UST（UTAU Sequence Text）形式ファイルを解析してSSコードを生成"""
 
     def __init__(self):
-        self.events = []
         self.tempo = 120.0
-        self.current_beat = 0.0
+        self.notes = []
 
     def parse_file(self, filename):
-        """USTファイルを解析してSWSイベントへ変換"""
+        """USTファイルを解析してSSコード（文字列）を生成"""
 
         if not os.path.isfile(filename):
             sws_error(1, "FileNotFoundError", f"file not found: {filename}")
@@ -817,10 +819,10 @@ class USTParser:
             except Exception as e:
                 sws_error(current_note_line or line_number, "NoteError", str(e))
 
-        return self.events
+        return self._generate_ss_code()
 
     def _process_note(self, note_dict, line_number):
-        """USTノートをSWSイベントへ変換"""
+        """USTノートをUSTParser内部のnoteリストへ追加"""
         # Lyric (may be absent)
         lyric = note_dict.get("Lyric", "").strip()
 
@@ -852,33 +854,87 @@ class USTParser:
         if lyric and lyric.upper() == "R":
             is_rest = True
 
-        if is_rest:
-            instrument = "null"
-            notes = []
-        else:
-            instrument = DEFAULT_UST_INSTRUMENT
-            pitch_name = midi_to_note_name(note_num)
-            note_data = NoteData(
-                pitch=pitch_name,
-                slur=False,
-                key_bypass=True,  # UST is absolute pitch
-                lyric=lyric if lyric else None,
-                key="C"
-            )
-            notes = [note_data]
+        # Store note info
+        note_info = {
+            "note_num": note_num,
+            "length": length,
+            "beats": beats,
+            "lyric": lyric if lyric else "",
+            "is_rest": is_rest
+        }
 
-        # Create event starting at current_beat
-        event = SoundEvent(
-            instrument=instrument,
-            start=self.current_beat,
-            duration=beats,
-            notes=notes,
-            line=line_number,
-            class_name="main"
-        )
+        self.notes.append(note_info)
 
-        self.events.append(event)
-        self.current_beat += beats
+    def _generate_ss_code(self):
+        """パースされたUST情報からSSコード（文字列）を生成"""
+        lines = []
+
+        # Header: tempoconst
+        lines.append(f'tempoconst="{self.tempo:.2f}";')
+        lines.append("")
+
+        # Events
+        for note_info in self.notes:
+            if note_info["is_rest"]:
+                # 休符: sleep()として出力
+                beats_str = self._format_beats_for_sleep(note_info["beats"])
+                lines.append(f"sleep({beats_str});")
+            else:
+                # 通常ノート: snd()として出力
+                instrument = DEFAULT_UST_INSTRUMENT
+                pitch = midi_to_note_name(note_info["note_num"])
+                length_str = self._beats_to_denominator(note_info["beats"])
+                lyric = note_info["lyric"]
+
+                lyric_attr = ""
+                if lyric:
+                    lyric_attr = f',Lyric="{lyric}"'
+
+                lines.append(f'snd("{instrument}",{length_str},{pitch}{lyric_attr});')
+
+        lines.append("")
+
+        return "\n".join(lines)
+
+    def _format_beats_for_sleep(self, beats):
+        """ビート数をsleep()の引数形式に変換"""
+        # UST Length 480 = 1 beat = denominator 4
+        # beats を分母（denominator）に逆変換
+        if beats <= 0:
+            return "4"
+        
+        denominator = 4.0 / beats
+        
+        # 整数か確認
+        if denominator == int(denominator):
+            return str(int(denominator))
+        
+        # 点音符か確認（1.5倍の形式）
+        dotted_denom = denominator / 1.5
+        if dotted_denom == int(dotted_denom):
+            return f"{int(dotted_denom)}+"
+        
+        # 変換不可の場合は近い値を使用
+        return str(int(round(denominator)))
+
+    def _beats_to_denominator(self, beats):
+        """ビート数をsnd()の長さ引数（分母）に変換"""
+        if beats <= 0:
+            return "4"
+        
+        denominator = 4.0 / beats
+        
+        # 整数か確認
+        if denominator == int(denominator):
+            return str(int(denominator))
+        
+        # 点音符か確認（1.5倍の形式）
+        dotted_denom = denominator / 1.5
+        if dotted_denom == int(dotted_denom):
+            return f"{int(dotted_denom)}+"
+        
+        # 変換不可の場合は近い値を使用
+        return str(int(round(denominator)))
 
 
 # ============================================================
@@ -901,6 +957,7 @@ class Compiler:
         self.recursion_stack = set()
         self.tempoconst_count = 0
         self.source_type = None  # "ss" or "ust"
+        self.ss_source_code = ""  # 現在コンパイル中のSSコード（output.ss用）
 
     def compile_file(self, filename):
         """ファイルをコンパイル（.ss または .ust）"""
@@ -921,8 +978,34 @@ class Compiler:
 
         try:
             parser = USTParser()
-            self.events = parser.parse_file(filename)
-            self.tempo_map = TempoMap(parser.tempo)
+            ss_code = parser.parse_file(filename)
+            
+            cprint("UST loaded")
+            cprint("UST translated to SS")
+            
+            # SSコードを内部保存
+            self.ss_source_code = ss_code
+            
+            # SSコードを通常のcompile処理へ
+            # まずコードを行に分割
+            raw_lines = ss_code.split('\n')
+            lines = []
+            
+            for number, raw in enumerate(raw_lines, 1):
+                try:
+                    line = remove_comments(raw, number)
+                except SWSError as e:
+                    raise e
+
+                if not line:
+                    continue
+
+                lines.append((number, line))
+            
+            # Compilerで処理
+            self.compile_lines(lines)
+            
+            cprint(f"Found {len(self.events)} events")
 
         except SWSError:
             raise
@@ -959,6 +1042,9 @@ class Compiler:
                 continue
 
             lines.append((number, line))
+
+        # SSコードを内部保存
+        self.ss_source_code = "".join([line + "\n" for _, line in lines])
 
         self.compile_lines(lines)
 
@@ -1125,6 +1211,20 @@ class Compiler:
                     sws_error(line_number, "ValueError", "class name cannot be empty")
 
                 self.current_ust_class = class_name
+                i += 1
+                continue
+
+            # output.ss
+            match = re.fullmatch(r'output\.ss\s*\(\s*"([^"]+)"\s*\)\s*;', stripped)
+
+            if match:
+                filename = match.group(1)
+
+                if not filename:
+                    sws_error(line_number, "ValueError", "output.ss requires a filename")
+
+                req = OutputRequest("ss", filename, line_number)
+                self.output_requests.append(req)
                 i += 1
                 continue
 
@@ -1875,6 +1975,44 @@ class USTGenerator:
 
 
 # ============================================================
+# SS GENERATOR
+# ============================================================
+
+class SSGenerator:
+    """SWS .ss形式ファイルを生成"""
+
+    def __init__(self, ss_source_code):
+        self.ss_source_code = ss_source_code
+
+    def generate(self, filename):
+        """SSファイルを生成"""
+
+        # 一時ファイルへ書き込み、成功時にreplace
+        temp_fd, temp_path = tempfile.mkstemp(suffix='.ss')
+        try:
+            with os.fdopen(temp_fd, 'w', encoding='utf-8') as f:
+                f.write(self.ss_source_code)
+                f.flush()
+                os.fsync(f.fileno())
+
+            for attempt in range(10):
+                try:
+                    os.replace(temp_path, filename)
+                    break
+                except (PermissionError, OSError):
+                    if attempt >= 9:
+                        raise
+                    time.sleep(0.1)
+        except Exception as e:
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except:
+                    pass
+            raise Exception(f"Failed to generate SS file: {str(e)}")
+
+
+# ============================================================
 # WAV RENDERER
 # ============================================================
 
@@ -2185,15 +2323,6 @@ def compile_and_run(filename):
     for event in events:
         print_success(event)
 
-    # If source is UST, show a compact timeline debug (helpful for validation)
-    if compiler.source_type == "ust":
-        cprint("UST parsed events:")
-        for event in sorted(events, key=lambda e: (e.start, e.line)):
-            start = event.start
-            dur = event.duration
-            pitch = format_pitch_for_log(event.notes)
-            cprint(f"{start:g} beat -> {pitch}, {dur:g} beat (line {event.line})")
-
     # Slur analysis
     try:
         analyze_slurs(events)
@@ -2216,13 +2345,43 @@ def compile_and_run(filename):
         return False
 
     # Output Processing
+    # 処理順序: SS → WAV → MIDI → UST → Playback
+    has_ss_output = any(req.type == "ss" for req in compiler.output_requests)
     has_wav_output = any(req.type == "wav" for req in compiler.output_requests)
     has_midi_output = any(req.type == "midi" for req in compiler.output_requests)
     has_ust_output = any(req.type == "ust" for req in compiler.output_requests)
 
     wav_output_path = None
 
-    # WAV生成 (explicit requests)
+    # SS生成 (output.ss)
+    if has_ss_output:
+        try:
+            ss_gen = SSGenerator(compiler.ss_source_code)
+
+            for req in compiler.output_requests:
+                if req.type == "ss":
+                    output_path = req.get_output_path(filename)
+
+                    cprint(f"generating: {output_path}")
+
+                    # 親ディレクトリ作成
+                    output_dir = os.path.dirname(output_path)
+                    if output_dir and not os.path.exists(output_dir):
+                        try:
+                            os.makedirs(output_dir, exist_ok=True)
+                        except Exception as e:
+                            cprint(f"error: failed to create directory: {e}")
+                            return False
+
+                    ss_gen.generate(output_path)
+                    print_output_success("ss", output_path)
+
+        except Exception as e:
+            cprint(f"SS generation error: {e}")
+            time.sleep(2)
+            return False
+
+    # WAV生成 (output.wav)
     if has_wav_output:
         try:
             renderer = Renderer(events, compiler.tempo_map, compiler.key)
@@ -2251,7 +2410,7 @@ def compile_and_run(filename):
             time.sleep(2)
             return False
 
-    # MIDI生成
+    # MIDI生成 (output.midi)
     if has_midi_output:
         try:
             for req in compiler.output_requests:
@@ -2278,7 +2437,7 @@ def compile_and_run(filename):
             time.sleep(2)
             return False
 
-    # UST生成
+    # UST生成 (output.ust)
     if has_ust_output:
         try:
             for req in compiler.output_requests:
