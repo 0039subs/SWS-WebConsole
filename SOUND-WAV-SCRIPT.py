@@ -24,8 +24,6 @@ import time
 import io
 import tempfile
 import copy
-import chardet
-
 
 # ============================================================
 # SETTINGS
@@ -297,7 +295,8 @@ def note_to_midi(note, key="C", bypass=False):
         semitone_in_octave = base_midi % 12
 
         if semitone_in_octave not in scale:
-            best_note = min(scale, key=lambda x: abs(x - semitone_in_octave))
+            # 差が12を跨ぐ場合もあるので、最小差に直接マップ
+            best_note = min(scale, key=lambda x: abs((x - semitone_in_octave + 6) % 12 - 6))
             midi_value = (octave + 1) * 12 + best_note
 
     if midi_value < 0 or midi_value > 127:
@@ -404,6 +403,7 @@ class TempoMap:
             if b != beat_position
         ]
         self.segments.append((beat_position, tempo))
+        # 必ずソートしておく
         self.segments.sort()
 
     def beat_to_seconds(self, beat_position):
@@ -413,12 +413,16 @@ class TempoMap:
 
         total_seconds = 0.0
 
+        # segments は (start_beat, tempo) のリスト。順序は念のためソートしておく
+        self.segments.sort()
         for i in range(len(self.segments)):
             segment_beat, tempo = self.segments[i]
 
+            # このセグメントが開始する位置が変換位置を超えていたら以降処理は不要
             if beat_position <= segment_beat:
                 break
 
+            # このセグメントでカバーするビート数を計算
             if i + 1 < len(self.segments):
                 next_beat = self.segments[i + 1][0]
                 beats_in_segment = min(next_beat - segment_beat, beat_position - segment_beat)
@@ -489,13 +493,18 @@ class SoundEvent:
 # ============================================================
 
 def safe_split_cnt(text):
-    """安全に-cnt-で分割（文字列・括弧を考慮）"""
+    """安全に-cnt-で分割（文字列・括弧を考慮）
+    - "-cnt-" の長さ誤検出を避けるため正確に比較
+    """
     result = []
     current = ""
     
     bracket_depth = 0
     quote = False
     i = 0
+    
+    CNT = "-cnt-"
+    CNT_LEN = len(CNT)
     
     while i < len(text):
         char = text[i]
@@ -512,10 +521,10 @@ def safe_split_cnt(text):
             elif char == ']':
                 bracket_depth -= 1
             
-            if text[i:i+6] == "-cnt-" and bracket_depth == 0:
+            if text[i:i+CNT_LEN] == CNT and bracket_depth == 0:
                 result.append(current.strip())
                 current = ""
-                i += 6
+                i += CNT_LEN
                 continue
         
         current += char
@@ -588,7 +597,9 @@ def remove_comments(line, line_number):
         char = line[i]
 
         if char == '"':
-            in_string = not in_string
+            # エスケープされている"は無視
+            if i == 0 or line[i-1] != '\\':
+                in_string = not in_string
             result += char
             i += 1
             continue
@@ -619,20 +630,47 @@ def remove_comments(line, line_number):
 
 
 def detect_file_encoding(filepath):
-    """ファイルの文字コードを判定"""
+    """
+    ファイルの文字コードを判定（標準ライブラリのみで実装）
+    戻り値: (encoding_name, uses_replace_flag)
+    優先順位:
+      1. UTF-8 BOM -> 'utf-8-sig'
+      2. UTF-16 LE/BE BOM -> 'utf-16'
+      3. UTF-8 (strict)
+      4. CP932 (strict)
+      5. fallback 'utf-8' with replace (and a warning)
+    """
     try:
         with open(filepath, 'rb') as f:
-            raw_data = f.read()
-        
-        detected = chardet.detect(raw_data)
-        encoding = detected.get('encoding', 'utf-8')
-        
-        if encoding is None:
-            encoding = 'utf-8'
-        
-        return encoding
+            raw = f.read()
     except Exception:
-        return 'utf-8'
+        # Can't read file as binary, let caller handle
+        return ('utf-8', False)
+
+    # BOM checks
+    if raw.startswith(b'\xef\xbb\xbf'):
+        return ('utf-8-sig', False)
+    if raw.startswith(b'\xff\xfe') or raw.startswith(b'\xfe\xff'):
+        # use 'utf-16' which respects BOM
+        return ('utf-16', False)
+
+    # Try decode as utf-8 strict
+    try:
+        raw.decode('utf-8')
+        return ('utf-8', False)
+    except Exception:
+        pass
+
+    # Try CP932 (shift_jis) strict
+    try:
+        raw.decode('cp932')
+        return ('cp932', False)
+    except Exception:
+        pass
+
+    # Fallback: use utf-8 with replacement and warn the user
+    show_warning(f"Unable to reliably detect UST file encoding for '{os.path.basename(filepath)}'. Falling back to UTF-8 with replacement; some characters may be corrupted.")
+    return ('utf-8', True)
 
 
 # ============================================================
@@ -653,54 +691,96 @@ class USTParser:
         if not os.path.isfile(filename):
             sws_error(1, "FileNotFoundError", f"file not found: {filename}")
 
-        # 文字コード判定
-        encoding = detect_file_encoding(filename)
+        # 文字コード判定（標準ライブラリのみ）
+        encoding, use_replace = detect_file_encoding(filename)
 
+        # Read text with chosen encoding
         try:
-            with open(filename, "r", encoding=encoding, errors='replace') as f:
-                lines = f.readlines()
+            if use_replace:
+                with open(filename, "r", encoding=encoding, errors='replace') as f:
+                    lines = f.readlines()
+            else:
+                with open(filename, "r", encoding=encoding, errors='strict') as f:
+                    lines = f.readlines()
+        except UnicodeDecodeError as e:
+            # Try alternate decodings before failing
+            try:
+                with open(filename, "r", encoding='cp932', errors='strict') as f:
+                    lines = f.readlines()
+                    encoding = 'cp932'
+                    use_replace = False
+            except Exception:
+                try:
+                    with open(filename, "r", encoding='utf-8', errors='replace') as f:
+                        lines = f.readlines()
+                        encoding = 'utf-8'
+                        use_replace = True
+                        show_warning(f"File '{filename}' could not be decoded strictly; using UTF-8 with replacement.")
+                except Exception as e2:
+                    sws_error(1, "FileError", f"failed to read UST file: {str(e2)}")
         except Exception as e:
             sws_error(1, "FileError", f"failed to read UST file: {str(e)}")
 
         # パース
         section = None
         current_note = {}
+        current_note_line = None
         line_number = 0
 
-        for line in lines:
+        for raw_line in lines:
             line_number += 1
-            line = line.strip()
+            # We strip trailing newline but keep content for key=value parsing
+            line = raw_line.strip()
 
             if not line:
                 continue
 
-            # セクション開始
-            if line.startswith("[#"):
-                if not line.endswith("]"):
-                    sws_error(line_number, "SyntaxError", "invalid UST section header")
+            # Section header
+            if line.startswith("[#") and line.endswith("]"):
+                inside = line[2:-1]
 
-                section = line[2:-1]
-
-                if section == "TRACKEND":
+                # TRACKEND -> stop parsing
+                if inside == "TRACKEND":
+                    # commit last note if any
+                    if current_note:
+                        try:
+                            self._process_note(current_note, current_note_line or line_number)
+                        except Exception as e:
+                            sws_error(current_note_line or line_number, "NoteError", str(e))
+                        current_note = {}
+                        current_note_line = None
                     break
 
-                if section == "SETTING":
+                if inside == "SETTING":
+                    # commit previous note if any
+                    if current_note:
+                        try:
+                            self._process_note(current_note, current_note_line or line_number)
+                        except Exception as e:
+                            sws_error(current_note_line or line_number, "NoteError", str(e))
+                        current_note = {}
+                        current_note_line = None
                     section = "SETTING"
                     continue
 
-                # ノート開始
-                if section.startswith("NOTE"):
-                    # 前のノートを保存
+                # NOTE sections are like [#0000], [#0001], i.e., numeric inside
+                if inside.isdigit():
+                    # New note section: commit previous note if present
                     if current_note:
                         try:
-                            self._process_note(current_note, line_number)
+                            self._process_note(current_note, current_note_line or line_number)
                         except Exception as e:
-                            sws_error(line_number, "NoteError", str(e))
-                    
+                            sws_error(current_note_line or line_number, "NoteError", str(e))
+                    # Start a fresh note dict; record the line number of section header
                     current_note = {}
+                    current_note_line = line_number
+                    section = "NOTE"
                     continue
 
-            # キー＝値形式でパース
+                # Unknown section header - treat as error (strict)
+                sws_error(line_number, "SyntaxError", f"unsupported UST section: [{inside}]")
+
+            # key=value lines
             if "=" in line:
                 key, value = line.split("=", 1)
                 key = key.strip()
@@ -709,78 +789,92 @@ class USTParser:
                 if section == "SETTING":
                     if key == "Tempo":
                         try:
-                            self.tempo = float(value)
-                            if self.tempo <= 0 or self.tempo > 500:
+                            tempo_val = float(value)
+                            if tempo_val <= 0 or tempo_val > 500:
                                 raise ValueError("invalid tempo")
-                        except ValueError:
+                            self.tempo = tempo_val
+                        except Exception:
                             sws_error(line_number, "ValueError", f"invalid Tempo value: {value}")
+                    # other setting keys are ignored for now
+                    continue
 
-                elif section and section.startswith("NOTE"):
+                elif section == "NOTE":
+                    # store into current_note; values are raw strings
                     current_note[key] = value
+                    continue
+
+                else:
+                    # lines outside recognized sections are ignored
+                    continue
+
+            # If line is neither section header nor key=value, ignore (robust)
+            continue
 
         # 最後のノートを処理
         if current_note:
             try:
-                self._process_note(current_note, line_number)
+                self._process_note(current_note, current_note_line or line_number)
             except Exception as e:
-                sws_error(line_number, "NoteError", str(e))
+                sws_error(current_note_line or line_number, "NoteError", str(e))
 
         return self.events
 
     def _process_note(self, note_dict, line_number):
         """USTノートをSWSイベントへ変換"""
-
-        # 必須情報の取得
+        # Lyric (may be absent)
         lyric = note_dict.get("Lyric", "").strip()
-        
+
+        # NoteNum (MIDI number) - default 60
         try:
-            note_num = int(note_dict.get("NoteNum", "60"))
-        except ValueError:
+            note_num_raw = note_dict.get("NoteNum", "60")
+            note_num = int(note_num_raw)
+        except Exception:
             sws_error(line_number, "ValueError", f"invalid NoteNum: {note_dict.get('NoteNum')}")
 
         if note_num < 0 or note_num > 127:
             sws_error(line_number, "ValueError", f"NoteNum out of range: {note_num}")
 
+        # Length - default 480
         try:
-            length = int(note_dict.get("Length", "480"))
-        except ValueError:
+            length_raw = note_dict.get("Length", "480")
+            length = int(length_raw)
+        except Exception:
             sws_error(line_number, "ValueError", f"invalid Length: {note_dict.get('Length')}")
 
         if length <= 0:
             sws_error(line_number, "ValueError", "Length must be greater than 0")
 
-        # 長さをビートに変換
+        # Convert length to beats
         beats = ust_length_to_beats(length)
 
-        # 休符判定
-        is_rest = lyric.upper() == "R"
+        # Rest detection (Lyric == R or r)
+        is_rest = False
+        if lyric and lyric.upper() == "R":
+            is_rest = True
 
         if is_rest:
-            # 休符イベント
             instrument = "null"
             notes = []
         else:
-            # 音符イベント
             instrument = DEFAULT_UST_INSTRUMENT
-            pitch = midi_to_note_name(note_num)
-            
+            pitch_name = midi_to_note_name(note_num)
             note_data = NoteData(
-                pitch=pitch,
+                pitch=pitch_name,
                 slur=False,
-                key_bypass=True,  # USTの絶対音高を維持
+                key_bypass=True,  # UST is absolute pitch
                 lyric=lyric if lyric else None,
                 key="C"
             )
             notes = [note_data]
 
-        # イベント作成
+        # Create event starting at current_beat
         event = SoundEvent(
             instrument=instrument,
             start=self.current_beat,
             duration=beats,
             notes=notes,
             line=line_number,
-            class_name="main"  # UST読み込みはmainトラック
+            class_name="main"
         )
 
         self.events.append(event)
@@ -1135,33 +1229,49 @@ class Compiler:
         return self.events
 
     def compile_snd_expression(self, line_number, expression):
+        """
+        -cnt- を含む可能性のある snd(...) 式を処理する。
+        本実装は仕様に従い、-cnt- グループ内で同一 class のイベントは
+        同一 Track Cursor から開始し、グループ終了時に各 Track Cursor を
+        グループ内の最大終了位置まで進める。
+        """
 
         try:
             parts = safe_split_cnt(expression)
         except ValueError as e:
             sws_error(line_number, "SyntaxError", str(e))
 
+        # Snapshot main cursor at start of processing this expression.
+        # This ensures consistent initialization for newly created classes within a single -cnt- group.
+        main_cursor_snapshot = self.main_cursor
+
         if len(parts) == 1:
-            event = self.parse_snd(line_number, parts[0])
+            # Single event, normal behaviour: parse and append, update cursor for its track.
+            event = self.parse_snd(line_number, parts[0], main_cursor_snapshot)
             self.events.append(event)
             
             # Update appropriate cursor
             if event.class_name is None:
+                # main cursor moves to event.end
                 self.main_cursor = event.end
             else:
+                # track cursor moves to event.end
                 self.track_cursors[event.class_name] = event.end
             return
 
-        # cnt group - all events start at same position
+        # cnt group - all parts start "simultaneously" per-track
         cnt_group = []
+
+        # For deterministic behavior, we must ensure parse_snd uses the same snapshot when initializing new classes.
         for part in parts:
-            event = self.parse_snd(line_number, part)
+            event = self.parse_snd(line_number, part, main_cursor_snapshot)
             cnt_group.append(event)
 
+        # Append all events
         self.events.extend(cnt_group)
 
-        # Update cursors for each class in the group
-        # Find max end time for each class
+        # After group, update cursors:
+        # For each track (including main), move cursor to max end of events in this group that belong to that track.
         class_ends = {}
         main_end = None
 
@@ -1177,7 +1287,7 @@ class Compiler:
                 else:
                     class_ends[event.class_name] = max(class_ends[event.class_name], event.end)
 
-        # Update main cursor if there were unclassed events
+        # Update main cursor if any class-less events existed in group
         if main_end is not None:
             self.main_cursor = main_end
 
@@ -1185,7 +1295,12 @@ class Compiler:
         for class_name, end_pos in class_ends.items():
             self.track_cursors[class_name] = end_pos
 
-    def parse_snd(self, line_number, expression):
+    def parse_snd(self, line_number, expression, main_cursor_snapshot):
+        """
+        parse_snd: パースして SoundEvent を作る。
+        main_cursor_snapshot は -cnt- グループ開始時の main cursor のスナップショット。
+        新規 class の初期化はこの snapshot を用いる（仕様通り）。
+        """
 
         if not (expression.startswith("snd(") and expression.endswith(")")):
             sws_error(line_number, "SyntaxError", "invalid snd()")
@@ -1306,9 +1421,10 @@ class Compiler:
 
         # Determine start position based on class
         if class_name is not None:
-            # Track-based: use track cursor if exists, otherwise initialize to main cursor
+            # Track-based: use track cursor if exists, otherwise initialize to main_cursor_snapshot
             if class_name not in self.track_cursors:
-                self.track_cursors[class_name] = self.main_cursor
+                # Initialize track cursor to snapshot of main cursor at the time this expression processing began
+                self.track_cursors[class_name] = main_cursor_snapshot
             start = self.track_cursors[class_name]
         else:
             # No class: use main cursor
@@ -1433,44 +1549,38 @@ def synth_wave(instrument, frequency, t):
 
 def analyze_slurs(events):
     """スラー対象を特定し、不正なスラーはエラーにする"""
-    
+
+    # Basic implementation: for each note with slur flag, ensure there exists a following
+    # event with same pitch that starts exactly at this event.end (i.e., legato)
+    # or is attached to the same start time and continuous. If not found, error.
     for i, event in enumerate(events):
         for note in event.notes:
             if isinstance(note, NoteData) and note.slur:
-                # スラー先を探す
-                found_slur_target = False
-                
-                # 同じ開始時刻で次のイベントを探す
-                for j in range(i + 1, len(events)):
+                found = False
+                # search following events
+                for j in range(i+1, len(events)):
                     next_event = events[j]
-                    
-                    # 異なる開始時刻に到達したらスラー失敗
-                    if next_event.start > event.start:
+                    # same class/instrument may play overlapping; we only accept exact continuation
+                    if not next_event.notes:
+                        continue
+                    # compare pitch on first note element of next_event (for single-note events)
+                    next_note = next_event.notes[0]
+                    if not isinstance(next_note, NoteData):
+                        continue
+                    if next_note.pitch != note.pitch:
+                        continue
+                    # check temporal adjacency
+                    if abs(next_event.start - event.end) < 1e-9:
+                        found = True
                         break
-                    
-                    # 同じ開始時刻で、時間的連続なら成立
-                    if (next_event.start + next_event.duration == event.start + event.duration
-                        and note.pitch == next_event.notes[0].pitch if next_event.notes else False):
-                        found_slur_target = True
+                    # allow same start (chordal slurs) only if next_event.start == event.start and next_event.end == event.end
+                    if abs(next_event.start - event.start) < 1e-9 and abs(next_event.end - event.end) < 1e-9:
+                        found = True
                         break
-                
-                # 時間的連続で同じ音の次のイベントを探す
-                if not found_slur_target:
-                    for j in range(i + 1, len(events)):
-                        next_event = events[j]
-                        
-                        # 現在のイベント終了時刻から始まる
-                        if (next_event.start == event.end 
-                            and next_event.notes 
-                            and note.pitch == next_event.notes[0].pitch):
-                            found_slur_target = True
-                            break
-                        
-                        # スラー対象が見つからない場合、次のイベント以降は対象外
-                        if next_event.start > event.end:
-                            break
-                
-                if not found_slur_target:
+                    # if next_event starts after event.end, stop searching for continuation
+                    if next_event.start > event.end + 1e-9:
+                        break
+                if not found:
                     raise ValueError(f"slur target not found for {note.pitch} at line {event.line}")
 
 
@@ -2007,6 +2117,7 @@ def format_beats(beats):
     if beats == 1.0:
         return "1 beat"
     else:
+        # strip trailing zeros
         return f"{beats:g} beat"
 
 
@@ -2074,6 +2185,15 @@ def compile_and_run(filename):
     for event in events:
         print_success(event)
 
+    # If source is UST, show a compact timeline debug (helpful for validation)
+    if compiler.source_type == "ust":
+        cprint("UST parsed events:")
+        for event in sorted(events, key=lambda e: (e.start, e.line)):
+            start = event.start
+            dur = event.duration
+            pitch = format_pitch_for_log(event.notes)
+            cprint(f"{start:g} beat -> {pitch}, {dur:g} beat (line {event.line})")
+
     # Slur analysis
     try:
         analyze_slurs(events)
@@ -2102,7 +2222,7 @@ def compile_and_run(filename):
 
     wav_output_path = None
 
-    # WAV生成
+    # WAV生成 (explicit requests)
     if has_wav_output:
         try:
             renderer = Renderer(events, compiler.tempo_map, compiler.key)
@@ -2185,7 +2305,27 @@ def compile_and_run(filename):
             time.sleep(2)
             return False
 
-    # Playback (WAV only, after all output complete)
+    # If source was UST and no explicit wav was requested/generated, render to a temporary WAV and play it
+    if compiler.source_type == "ust" and wav_output_path is None:
+        try:
+            renderer = Renderer(events, compiler.tempo_map, compiler.key)
+            temp_fd, temp_path = tempfile.mkstemp(suffix='.wav')
+            os.close(temp_fd)
+            cprint(f"rendering (temporary): {temp_path}")
+            renderer.render(temp_path)
+            cprint("playing...")
+            play_audio(temp_path)
+            # remove temporary file after playback attempt
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+        except Exception as e:
+            cprint(f"UST playback error: {e}")
+            time.sleep(2)
+            return False
+
+    # Playback (WAV only, after all explicit output complete)
     if wav_output_path and os.path.exists(wav_output_path):
         cprint("playing...")
         play_audio(wav_output_path)
@@ -2312,3 +2452,13 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         cprint("\nSWS stopped.")
         sys.exit(130)
+
+    except Exception as e:
+        # Top-level catch to improve double-click debugability
+        cprint("SWS fatal error:")
+        cprint(str(e))
+        try:
+            input("Press Enter to exit...")
+        except Exception:
+            pass
+        sys.exit(1)
