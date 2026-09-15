@@ -1,0 +1,86 @@
+# SWS Web Console - GitHub Pages Configuration
+
+# Site settings
+title: "SWS Web Console"
+description: "Sound Wave Script - Web-based music notation and synthesis tool"
+url: "https://francium87arc-cyber.github.io"
+baseurl: "/SWS" # リポジトリ名に合わせて変更してください
+
+# Build settings
+theme: jekyll-theme-minimal
+markdown: kramdown
+kramdown:
+  syntax_highlighter: rouge
+
+# Exclude from processing
+exclude:
+  - README.md
+  - LICENSE
+  - .gitignore
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - .github/
+  - docs/
+  - tests/
+
+# Include
+include:
+  - .gitignore
+
+# Collections
+collections:
+  docs:
+    output: true
+    permalink: /docs/:name
+
+# Default layouts
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: "default"
+
+# Social links
+social_links:
+  github: francium87arc-cyber
+
+# Code snippet options
+highlight: rouge
+highlighter: rouge
+
+# Plugin settings
+plugins:
+  - jekyll-seo-tag
+  - jekyll-feed
+  - jekyll-sitemap
+
+# SEO settings
+social:
+  name: SWS Web Console
+  links:
+    - https://github.com/francium87arc-cyber
+
+# Analytics (optional - uncomment to enable)
+# google_analytics: UA-XXXXXXXX-X
+
+# Permalink style
+permalink: /:year/:month/:day/:title/
+
+# Timezone
+timezone: Asia/Tokyo
+
+# Show excerpts
+show_excerpts: true
+
+# Pagination
+paginate: 10
+paginate_path: /page:num/
+
+# Sass
+sass:
+  style: compressed
