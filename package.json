@@ -1,17 +1,39 @@
 {
-  "name": "sws-webconsole",
-  "version": "0.1.0",
-  "description": "Web console for SWS (Sound Wav Script)",
-  "private": true,
+  "name": "sws-web-console",
+  "version": "0.2.0",
+  "description": "Sound Wave Script - Web-based music notation and synthesis tool",
+  "main": "SWS(2).html",
   "scripts": {
-    "start": "npx http-server ./web -p 8000 -c-1",
-    "lint": "eslint ./web/static || true",
-    "test": "echo \"No frontend tests defined\" && exit 0"
+    "start": "python -m http.server 8000",
+    "serve": "bundle exec jekyll serve",
+    "build": "bundle exec jekyll build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "music",
+    "synthesis",
+    "web-audio",
+    "script",
+    "notation",
+    "ust",
+    "midi"
+  ],
+  "author": "francium87arc-cyber",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/francium87arc-cyber/SWS.git"
+  },
+  "homepage": "https://github.com/francium87arc-cyber/SWS#readme",
+  "bugs": {
+    "url": "https://github.com/francium87arc-cyber/SWS/issues"
   },
   "devDependencies": {
-    "http-server": "^14.1.1"
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.23.0",
+    "babel-loader": "^9.1.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.0"
   },
-  "engines": {
-    "node": ">=16"
-  }
+  "dependencies": {}
 }
