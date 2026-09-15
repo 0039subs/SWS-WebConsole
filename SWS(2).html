@@ -571,7 +571,9 @@ input[type="file"] {
     <!-- Console -->
     <div class="console-section">
       <div class="console-output" id="consoleOutput"></div>
-      <div class="footer-actions">
+        <div class="footer-actions">
+        <div class="project-info" id="projectInfo">tempo=120 key=C</div>
+        <button id="exportSsBtn">Export SS</button>
         <div class="project-info" id="projectInfo">tempo=120 key=C</div>
         <button id="exportSsBtn">Export SS</button>
       </div>
@@ -2571,6 +2573,8 @@ const footerActions = document.querySelector('.footer-actions');
 if (footerActions) {
   footerActions.appendChild(exportWavBtn);
 }
+
 </script>
+
 </body>
 </html>
