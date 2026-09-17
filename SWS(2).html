@@ -1,23 +1,34 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SWS Web Console v0.3</title>
-<style>
 
+<style>
 :root {
   --bg: #0b0b0b;
   --panel: #111;
+  --panel-2: #181818;
   --text: #e6eef8;
+  --muted: #9aa;
   --accent: #2196f3;
   --accent2: #ffc107;
-  --border: #222;
+  --border: #2a2a2a;
+  --grid: rgba(255,255,255,.08);
+  --grid-strong: rgba(255,255,255,.18);
   --success: #9ef0a9;
   --error: #ff9b9b;
-  --editor-font: 'Courier New', monospace;
-  --editor-size: 13px;
+
+  --editor-font: "Courier New", Consolas, monospace;
+  --editor-size: 14px;
   --editor-line: 1.5;
+  --editor-padding-top: 10px;
+  --editor-padding-bottom: 10px;
+  --editor-padding-left: 12px;
+  --editor-padding-right: 12px;
+  --line-number-width: 48px;
+
   --syntax-blue: #2196f3;
   --syntax-yellow: #ffc107;
   --syntax-green: #9ef0a9;
@@ -28,13 +39,30 @@
   --syntax-string: #a9d1ff;
   --syntax-number: #90ee90;
   --syntax-pitch: #ffb3b3;
+
+  --piano-white: #fff;
+  --piano-black: #111;
 }
 
 body.light {
   --bg: #f5f5f5;
-  --panel: #ffffff;
-  --text: #333;
-  --border: #ddd;
+  --panel: #fff;
+  --panel-2: #f0f0f0;
+  --text: #222;
+  --muted: #667085;
+  --border: #d5d5d5;
+  --grid: rgba(0,0,0,.08);
+  --grid-strong: rgba(0,0,0,.18);
+
+  --syntax-blue: #1565c0;
+  --syntax-yellow: #a66b00;
+  --syntax-green: #168044;
+  --syntax-red: #c62828;
+  --syntax-orange: #ef6c00;
+  --syntax-teal: #00838f;
+  --syntax-string: #2454a6;
+  --syntax-number: #28752e;
+  --syntax-pitch: #a33f3f;
 }
 
 * {
@@ -43,121 +71,146 @@ body.light {
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
+  width: 100%;
   height: 100%;
+  overflow: hidden;
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 body {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  height: 100vh;
-  transition: background 0.3s, color 0.3s;
+  transition: background .25s ease, color .25s ease;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 14px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
-  gap: 8px;
-  flex-shrink: 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+button,
+input,
+select {
+  font: inherit;
 }
 
-.header .title {
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.header .controls {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-button, a.btn {
+button {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
   background: #1f1f1f;
   color: var(--text);
-  border: 1px solid var(--border);
-  padding: 8px 12px;
-  border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
   white-space: nowrap;
-  transition: all 0.2s;
-  font-family: inherit;
 }
 
 button:hover {
-  background: #2a2a2a;
-  opacity: 0.9;
+  background: #2b2b2b;
 }
 
 button.primary {
-  background: linear-gradient(180deg, #2b8aef, #1766d6);
   color: #fff;
+  background: linear-gradient(180deg, #2b8aef, #1766d6);
   border-color: #1766d6;
 }
 
 button.danger {
-  background: linear-gradient(180deg, #d32f2f, #a51b1b);
   color: #fff;
+  background: linear-gradient(180deg, #d32f2f, #a51b1b);
+  border-color: #a51b1b;
 }
 
 button:disabled {
-  opacity: 0.45;
+  opacity: .45;
   cursor: not-allowed;
 }
 
-input[type="file"] { display: none; }
-input[type="color"] { width: 40px; height: 36px; border: 1px solid var(--border); border-radius: 4px; }
-input[type="text"], input[type="number"], select {
-  padding: 8px;
+input[type="file"] {
+  display: none;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+  width: 100%;
+  padding: 8px 10px;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 6px;
   background: var(--bg);
   color: var(--text);
   font-size: 12px;
 }
 
+input[type="color"] {
+  width: 40px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* Header */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.header .title {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.header .controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Main layout */
+
 .main {
   display: flex;
   flex: 1;
-  overflow: hidden;
   min-height: 0;
+  overflow: hidden;
 }
 
 .sidebar {
-  width: 240px;
-  background: var(--panel);
-  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
+  width: 240px;
+  min-width: 240px;
   overflow: hidden;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .sidebar-header {
   padding: 10px 12px;
-  font-size: 11px;
-  color: #9aa;
+  color: var(--muted);
+  background: var(--panel-2);
   border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  letter-spacing: .08em;
   text-transform: uppercase;
 }
 
 .sidebar-content {
   flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 8px;
-  min-height: 0;
 }
 
 .track-item {
@@ -165,16 +218,18 @@ input[type="text"], input[type="number"], select {
   align-items: center;
   gap: 8px;
   padding: 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
   border-left: 3px solid transparent;
-  transition: all 0.15s;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-.track-item:hover { background: rgba(0,0,0,0.1); }
+.track-item:hover {
+  background: rgba(255,255,255,.04);
+}
+
 .track-item.selected {
-  background: rgba(33, 150, 243, 0.1);
+  background: rgba(33,150,243,.1);
   border-left-color: var(--accent);
 }
 
@@ -186,139 +241,183 @@ input[type="text"], input[type="number"], select {
 }
 
 .track-name {
-  font-weight: 600;
-  font-size: 12px;
   flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
   word-break: break-word;
 }
 
 .track-status {
+  color: var(--muted);
   font-size: 10px;
-  color: #9aa;
+  white-space: nowrap;
 }
 
 .sidebar-actions {
-  padding: 8px;
-  border-top: 1px solid var(--border);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+  padding: 8px;
+  background: var(--panel-2);
+  border-top: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .center {
-  flex: 1;
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-width: 0;
   overflow: hidden;
 }
 
+/* Track tabs */
+
 .tabs {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
   padding: 8px;
+  overflow-x: auto;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  overflow-x: auto;
-  align-items: center;
-  min-height: 40px;
 }
 
 .tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 10px;
+  border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--panel);
   color: var(--text);
   cursor: pointer;
-  display: flex;
-  gap: 6px;
-  align-items: center;
+  font-size: 12px;
   white-space: nowrap;
   flex-shrink: 0;
-  font-size: 12px;
-  border: 1px solid var(--border);
 }
 
-.tab.active { background: linear-gradient(180deg, #123f5f, #0b2b46); }
-.tab .close { font-weight: 700; color: #f66; cursor: pointer; margin-left: 4px; }
+.tab.active {
+  background: linear-gradient(180deg, #123f5f, #0b2b46);
+  border-color: rgba(33,150,243,.6);
+}
+
+.tab .close {
+  margin-left: 4px;
+  color: #f66;
+  font-weight: 700;
+}
+
+/* Editor */
 
 .editor-section {
-  flex: 1;
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
-}
-
-.editor-area {
-  flex: 1;
-  display: flex;
-  min-height: 0;
-  overflow: hidden;
-  position: relative;
   background: var(--bg);
 }
 
-.line-numbers {
-  width: 48px;
-  background: rgba(0,0,0,0.2);
-  color: #8fb4d9;
-  padding: 8px 4px;
+.editor-shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
+}
+
+.line-numbers {
+  flex: 0 0 var(--line-number-width);
+  width: var(--line-number-width);
+  min-width: var(--line-number-width);
+  max-width: var(--line-number-width);
+  overflow: hidden;
+  padding: var(--editor-padding-top) 6px var(--editor-padding-bottom) 4px;
+  background: rgba(0,0,0,.18);
   border-right: 1px solid var(--border);
-  flex-shrink: 0;
+  color: #8fb4d9;
   font-family: var(--editor-font);
   font-size: var(--editor-size);
-  line-height: var(--editor-line);
+  line-height: calc(var(--editor-size) * var(--editor-line));
+  letter-spacing: normal;
   text-align: right;
+  white-space: nowrap;
   user-select: none;
   box-sizing: border-box;
 }
 
-.editor-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  position: relative;
-  overflow: hidden;
+.line-number {
+  display: block;
+  width: 100%;
+  height: calc(var(--editor-size) * var(--editor-line));
+  line-height: calc(var(--editor-size) * var(--editor-line));
+  white-space: nowrap;
+  text-align: right;
+  box-sizing: border-box;
+  user-select: none;
 }
 
-textarea {
+.editor-main {
+  position: relative;
   flex: 1;
-  padding: 8px 12px;
-  background: transparent;
-  color: transparent;
-  caret-color: var(--text);
-  border: 0;
-  outline: 0;
-  resize: none;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.editor-scroll {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.highlight-layer,
+#codeEditor {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  box-sizing: border-box;
+
   font-family: var(--editor-font);
   font-size: var(--editor-size);
-  line-height: var(--editor-line);
+  line-height: calc(var(--editor-size) * var(--editor-line));
+  letter-spacing: normal;
+
+  padding-top: var(--editor-padding-top);
+  padding-bottom: var(--editor-padding-bottom);
+  padding-left: var(--editor-padding-left);
+  padding-right: var(--editor-padding-right);
+
   white-space: pre;
   overflow-wrap: normal;
   word-break: normal;
-  z-index: 2;
-  margin: 0;
-  position: relative;
+  tab-size: 2;
 }
 
 .highlight-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 8px 12px;
-  overflow: hidden;
-  pointer-events: none;
-  font-family: var(--editor-font);
-  font-size: var(--editor-size);
-  line-height: var(--editor-line);
   z-index: 1;
+  overflow: hidden;
+  color: var(--text);
+  background: transparent;
+  pointer-events: none;
+}
+
+#codeEditor {
+  z-index: 2;
+  resize: none;
+  overflow: auto;
+  outline: none;
+  border: 0;
+  color: transparent;
+  background: transparent;
+  caret-color: var(--text);
   white-space: pre;
 }
 
@@ -328,40 +427,41 @@ textarea {
 .syn-red { color: var(--syntax-red); }
 .syn-orange { color: var(--syntax-orange); }
 .syn-teal { color: var(--syntax-teal); }
-.syn-comment { color: var(--syntax-comment); opacity: 0.6; }
+.syn-comment { color: var(--syntax-comment); opacity: .7; }
 .syn-string { color: var(--syntax-string); }
 .syn-number { color: var(--syntax-number); }
 .syn-pitch { color: var(--syntax-pitch); }
 .syn-text { color: var(--text); }
 
+/* Console */
+
 .console-section {
   display: flex;
   flex-direction: column;
-  background: var(--bg);
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
   max-height: 220px;
   min-height: 80px;
   overflow: hidden;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .console-output {
   flex: 1;
-  overflow: auto;
+  min-height: 0;
+  margin: 8px;
   padding: 8px;
-  color: #dff1ff;
+  overflow: auto;
+  border-radius: 6px;
+  background: rgba(0,0,0,.25);
+  color: var(--text);
   font-family: var(--editor-font);
   font-size: 11px;
-  line-height: 1.4;
-  background: rgba(0,0,0,0.3);
-  border-radius: 4px;
-  margin: 8px;
-  min-height: 0;
+  line-height: 1.5;
 }
 
 .console-line {
-  margin: 0;
-  padding: 0;
+  white-space: pre-wrap;
   word-break: break-word;
 }
 
@@ -371,43 +471,44 @@ textarea {
 
 .console-footer {
   display: flex;
-  gap: 8px;
-  padding: 8px;
   align-items: center;
   justify-content: space-between;
-  flex-shrink: 0;
+  gap: 8px;
   flex-wrap: wrap;
+  padding: 8px;
+  background: var(--panel);
   border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
+
+/* Modal */
 
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  inset: 0;
+  z-index: 1000;
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
   padding: 20px;
   overflow-y: auto;
+  background: rgba(0,0,0,.6);
 }
 
-.modal-overlay.active { display: flex; }
+.modal-overlay.active {
+  display: flex;
+}
 
 .modal-dialog {
+  width: 100%;
+  max-width: 90vw;
+  max-height: 85vh;
+  margin: auto;
+  padding: 20px;
+  overflow: auto;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 20px;
-  max-width: 90vw;
-  width: 100%;
-  max-height: 85vh;
-  overflow-y: auto;
-  box-sizing: border-box;
-  margin: auto;
+  border-radius: 10px;
 }
 
 .modal-dialog h3 {
@@ -417,221 +518,366 @@ textarea {
 
 .modal-dialog label {
   display: block;
-  margin-bottom: 8px;
+  margin: 10px 0 6px;
   font-size: 12px;
-  font-weight: 500;
 }
 
-.modal-dialog input, .modal-dialog select {
-  width: 100%;
-  margin-bottom: 15px;
+.modal-dialog input,
+.modal-dialog select {
   box-sizing: border-box;
 }
 
 .modal-actions {
   display: flex;
-  gap: 8px;
   justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
 }
 
-/* Piano Roll Container */
-#pianoRollContainer {
-  width: 100%;
-  flex: 1;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  min-height: 0;
-}
+/* Piano Roll */
 
-.piano-keys {
-  width: 70px;
-  background: var(--panel);
-  border-right: 1px solid var(--border);
-  overflow-y: auto;
-  flex-shrink: 0;
+.piano-roll {
   display: flex;
   flex-direction: column;
-}
-
-.piano-key {
-  height: 20px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 0 6px;
-  font-size: 9px;
-  color: #9aa;
-  flex-shrink: 0;
-  box-sizing: border-box;
-  user-select: none;
-}
-
-#pianoRollCanvas {
-  flex: 1;
-  display: block;
-  touch-action: none;
-}
-
-.piano-roll-controls {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-  font-size: 12px;
-}
-
-.piano-roll-controls > span {
-  color: #9aa;
-  white-space: nowrap;
-}
-
-.piano-roll-controls > select {
-  width: auto;
-  min-width: 100px;
-}
-
-.mode-buttons {
-  display: flex;
-  gap: 4px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
   background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2px;
 }
 
-.mode-buttons button {
-  padding: 6px 10px;
-  font-size: 11px;
-  background: transparent;
-  border: none;
-  white-space: nowrap;
-}
-
-.mode-buttons button.active {
-  background: var(--accent);
-  color: white;
-  border-radius: 2px;
+.piano-roll-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 8px 10px;
+  overflow: hidden;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .piano-roll-track-tabs {
   display: flex;
-  gap: 4px;
-  padding: 8px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  overflow-x: auto;
   align-items: center;
-  min-height: 40px;
-  flex-shrink: 0;
+  gap: 6px;
+  min-width: 0;
+  min-height: 32px;
+  overflow-x: auto;
+  flex: 1 1 auto;
 }
 
 .piano-roll-track-tab {
-  padding: 6px 12px;
-  border-radius: 4px;
-  background: var(--panel);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
   color: var(--text);
   cursor: pointer;
-  display: flex;
-  gap: 6px;
-  align-items: center;
+  font-size: 12px;
   white-space: nowrap;
   flex-shrink: 0;
-  font-size: 12px;
-  border: 1px solid var(--border);
 }
 
 .piano-roll-track-tab.active {
   background: linear-gradient(180deg, #123f5f, #0b2b46);
-  border-color: var(--accent);
-}
-
-.piano-roll-track-tab .track-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
+  border-color: rgba(33,150,243,.6);
 }
 
 .piano-roll-track-tab .close {
-  font-weight: 700;
-  color: #f66;
-  cursor: pointer;
   margin-left: 4px;
-  font-size: 14px;
+  color: #f66;
+  font-weight: 700;
 }
 
-.piano-roll-apply-status {
-  font-size: 12px;
-  padding: 8px 12px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
+.piano-roll-controls {
   display: flex;
+  align-items: center;
   gap: 8px;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.status-indicator {
-  display: flex;
-  gap: 4px;
-  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  color: var(--muted);
   font-size: 12px;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
-.status-dot.applied {
-  background: var(--success);
+.mode-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
 }
 
-.status-dot.unapplied {
-  background: var(--accent2);
+.mode-buttons button {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 11px;
 }
 
-.piano-roll-buttons {
+.mode-buttons button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.piano-roll-body {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
+
+.piano-keyboard-panel {
+  position: relative;
+  width: 72px;
+  min-width: 72px;
+  overflow: hidden;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.piano-keyboard {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.piano-key {
+  position: absolute;
+  left: 0;
+  box-sizing: border-box;
+  width: 100%;
+  user-select: none;
+}
+
+.piano-key.white {
+  z-index: 1;
+  background: var(--piano-white);
+  color: #111;
+  border: 1px solid #999;
+}
+
+.piano-key.black {
+  z-index: 2;
+  width: 72%;
+  background: var(--piano-black);
+  color: #fff;
+  border: 1px solid #000;
+}
+
+.piano-key .key-label {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  font-size: 9px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.piano-roll-scroll {
+  position: relative;
+  min-width: 0;
+  overflow: auto;
+  background: var(--bg);
+  flex: 1;
+  touch-action: none;
+}
+
+.piano-roll-content {
+  position: relative;
+  min-width: 1000px;
+  min-height: 500px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.piano-roll-grid,
+.piano-roll-tempo-layer,
+.piano-roll-rest-layer,
+.piano-roll-node-layer,
+.piano-roll-playhead {
+  position: absolute;
+  inset: 0;
+}
+
+.piano-roll-grid {
+  z-index: 1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+  background-size: 32px 20px;
+}
+
+.piano-roll-tempo-layer {
+  z-index: 10;
+  pointer-events: none;
+}
+
+.piano-roll-rest-layer {
+  z-index: 20;
+  pointer-events: none;
+}
+
+.piano-roll-node-layer {
+  z-index: 30;
+  pointer-events: auto;
+}
+
+.piano-roll-playhead {
+  z-index: 100;
+  width: 2px;
+  background: #ff2e8a;
+  box-shadow: 0 0 8px rgba(255,46,138,.7);
+  pointer-events: none;
+}
+
+.piano-roll-node {
+  position: absolute;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,.2);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.piano-roll-node.selected {
+  box-shadow:
+    0 0 0 2px #00ffff,
+    inset 0 0 0 1px rgba(255,255,255,.5);
+}
+
+.piano-roll-rest {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #888;
+  color: #111;
+  border: 1px solid #555;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  pointer-events: auto;
+}
+
+.tempo-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ff2e8a;
+  box-shadow: 0 0 8px rgba(255,46,138,.6);
+}
+
+/* Mobile */
 
 @media (max-width: 900px) {
-  .sidebar { display: none; }
+  .sidebar {
+    display: none;
+  }
 }
 
 @media (max-width: 768px) {
-  .header { flex-direction: column; align-items: flex-start; }
-  .header .controls { width: 100%; flex-direction: column; }
-  .console-section { max-height: 160px; }
-  .piano-roll-controls { flex-direction: column; align-items: flex-start; }
-  .piano-roll-controls > select { width: 100%; }
-  .mode-buttons { width: 100%; }
-  .piano-keys { width: 50px; }
-  .piano-key { font-size: 8px; padding: 0 3px; }
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .header .controls {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .header .controls > * {
+    width: 100%;
+  }
+
+  .console-section {
+    max-height: 160px;
+  }
+
+  .piano-roll-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .piano-roll-controls > * {
+    width: 100%;
+  }
+
+  .mode-buttons {
+    width: 100%;
+  }
+
+  .mode-buttons button {
+    flex: 1;
+  }
+
+  .piano-keyboard-panel {
+    width: 56px;
+    min-width: 56px;
+  }
+
+  .piano-roll-content {
+    min-width: 760px;
+  }
 }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+@media (max-width: 430px) {
+  :root {
+    --line-number-width: 40px;
+  }
 
+  .header {
+    padding: 8px 10px;
+  }
+
+  .tabs,
+  .piano-roll-toolbar,
+  .piano-roll-controls {
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 6px;
+}
 </style>
 </head>
+
 <body class="dark">
 
 <header class="header">
   <div class="title">🎵 SWS Web Console v0.3</div>
+
   <div class="controls">
-    <input id="fileInput" type="file" accept=".ss,.ust" />
+    <input id="fileInput" type="file" accept=".ss,.ust">
     <button id="openBtn">Open</button>
     <button id="saveBtn">Save</button>
     <button id="playBtn" class="primary">▶ Play</button>
@@ -645,7 +891,9 @@ textarea {
 <div class="main">
   <aside class="sidebar">
     <div class="sidebar-header">Tracks</div>
+
     <div class="sidebar-content" id="trackList"></div>
+
     <div class="sidebar-actions">
       <button id="addTrackBtn">+ Add</button>
       <button id="renameTrackBtn">Rename</button>
@@ -655,38 +903,60 @@ textarea {
 
   <section class="center">
     <div class="tabs" id="tabs"></div>
-    <div class="editor-section">
-      <div class="editor-area">
-        <div class="line-numbers" id="lineNumbers"></div>
-        <div class="editor-wrapper">
-          <textarea id="codeEditor" spellcheck="false"></textarea>
-          <div class="highlight-layer" id="highlightLayer"></div>
+
+    <section class="editor-section">
+      <div class="editor-shell">
+        <div class="line-numbers" id="lineNumbers" aria-hidden="true"></div>
+
+        <div class="editor-main">
+          <div class="editor-scroll">
+            <pre
+              class="highlight-layer"
+              id="highlightLayer"
+              aria-hidden="true"
+            ></pre>
+
+            <textarea
+              id="codeEditor"
+              spellcheck="false"
+              wrap="off"
+              aria-label="SWS Code Editor"
+            ></textarea>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="console-section">
+    </section>
+
+    <section class="console-section">
       <div class="console-output" id="consoleOutput"></div>
+
       <div class="console-footer">
-        <div style="color:#9aa;font-size:11px;" id="projectInfo">tempo=120 key=C</div>
-        <div class="piano-roll-buttons">
+        <div id="projectInfo" style="color:var(--muted);font-size:11px;">
+          tempo=120 key=C
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button id="exportWavBtn">WAV</button>
           <button id="exportMidiBtn">MIDI</button>
           <button id="exportSsBtn">SS</button>
         </div>
       </div>
-    </div>
+    </section>
   </section>
 </div>
 
-<!-- ===== MODALS ===== -->
+<!-- Track modal -->
 <div class="modal-overlay" id="trackModal">
   <div class="modal-dialog" style="max-width:500px;">
     <h3 id="modalTitle">Add Track</h3>
-    <label>Track Name:</label>
-    <input type="text" id="trackNameInput" placeholder="e.g., melody" />
-    <label>Color:</label>
-    <input type="color" id="trackColorInput" />
-    <label>Default Instrument:</label>
+
+    <label for="trackNameInput">Track Name:</label>
+    <input id="trackNameInput" type="text" placeholder="e.g., melody">
+
+    <label for="trackColorInput">Color:</label>
+    <input id="trackColorInput" type="color">
+
+    <label for="trackInstrumentInput">Default Instrument:</label>
     <select id="trackInstrumentInput">
       <option>piano</option>
       <option>synth</option>
@@ -694,6 +964,7 @@ textarea {
       <option>drum</option>
       <option>sine</option>
     </select>
+
     <div class="modal-actions">
       <button id="modalCancel">Cancel</button>
       <button id="modalOk" class="primary">OK</button>
@@ -701,90 +972,137 @@ textarea {
   </div>
 </div>
 
+<!-- Piano Roll modal -->
 <div class="modal-overlay" id="pianoRollModal">
-  <div class="modal-dialog" style="max-width:98vw; max-height:95vh; display:flex; flex-direction:column;">
-    <h3 style="margin-bottom:10px;">Piano Roll</h3>
-    
-    <div class="piano-roll-track-tabs" id="pianoRollTrackTabs"></div>
-    
-    <div class="piano-roll-apply-status">
-      <div class="status-indicator" id="applyStatusIndicator">
-        <span class="status-dot applied"></span>
-        <span>✓ Editor反映済み</span>
-      </div>
-      <div class="piano-roll-buttons">
-        <button id="pianoRollApplyBtn" style="display:none;">→ Editorへ反映</button>
-      </div>
-    </div>
-    
-    <div class="piano-roll-controls">
-      <div class="mode-buttons">
-        <button id="modeSelect" class="active">↖ Select</button>
-        <button id="modePencil">✎ Pencil</button>
-        <button id="modeEraser">⌫ Eraser</button>
-      </div>
-      
-      <span>Length:</span>
-      <select id="inputLength" style="width:100px;">
-        <option value="4">4 (1/4)</option>
-        <option value="8">8 (1/8)</option>
-        <option value="16">16 (1/16)</option>
-        <option value="32">32 (1/32)</option>
-        <option value="64">64 (1/64)</option>
-        <option value="4+">4+ (dotted)</option>
-        <option value="8+">8+ (dotted)</option>
-      </select>
-      
-      <span>Snap:</span>
-      <select id="snapGrid" style="width:100px;">
-        <option value="1">1/4</option>
-        <option value="0.5">1/8</option>
-        <option value="0.25">1/16</option>
-      </select>
-      
-      <button id="pianoRollZoomIn">🔍+</button>
-      <button id="pianoRollZoomOut">🔍-</button>
-      <button id="undoBtn">↶ Undo</button>
-      <button id="redoBtn">↷ Redo</button>
-    </div>
+  <div
+    class="modal-dialog"
+    style="max-width:98vw;max-height:94vh;padding:0;overflow:hidden;"
+  >
+    <section class="piano-roll" id="pianoRoll">
 
-    <div id="pianoRollContainer">
-      <div class="piano-keys" id="pianoKeys"></div>
-      <canvas id="pianoRollCanvas"></canvas>
-    </div>
+      <div class="piano-roll-toolbar" id="pianoRollToolbar">
+        <div class="piano-roll-track-tabs" id="pianoRollTrackTabs"></div>
+      </div>
 
-    <div class="modal-actions" style="margin-top:10px;">
-      <button id="pianoRollClose">Close</button>
-    </div>
+      <div class="piano-roll-controls">
+        <div class="mode-buttons">
+          <button id="modeSelect" class="active">↖ Select</button>
+          <button id="modePencil">✎ Pencil</button>
+          <button id="modeEraser">⌫ Eraser</button>
+        </div>
+
+        <span>Length:</span>
+        <select id="inputLength" style="width:100px;">
+          <option value="1">1 (whole)</option>
+          <option value="2">2 (half)</option>
+          <option value="4">4 (quarter)</option>
+          <option value="8">8 (eighth)</option>
+          <option value="16">16 (1/16)</option>
+          <option value="32">32 (1/32)</option>
+          <option value="64">64 (1/64)</option>
+          <option value="4+">4+ (dotted)</option>
+          <option value="8+">8+ (dotted)</option>
+          <option value="16+">16+ (dotted)</option>
+        </select>
+
+        <span>Snap:</span>
+        <select id="snapGrid" style="width:100px;">
+          <option value="1">1/4</option>
+          <option value="0.5">1/8</option>
+          <option value="0.25">1/16</option>
+          <option value="0.125">1/32</option>
+        </select>
+
+        <button id="pianoRollZoomOut">🔍−</button>
+        <button id="pianoRollZoomIn">🔍+</button>
+        <button id="undoBtn">↶ Undo</button>
+        <button id="redoBtn">↷ Redo</button>
+        <button id="pianoRollApplyBtn">→ Editorへ反映</button>
+      </div>
+
+      <div class="piano-roll-body">
+        <div class="piano-keyboard-panel" id="pianoKeyboardPanel">
+          <div class="piano-keyboard" id="pianoKeyboard"></div>
+          <!-- Existing JS compatibility target -->
+          <div id="pianoKeys" hidden></div>
+        </div>
+
+        <div class="piano-roll-scroll" id="pianoRollScroll">
+          <div class="piano-roll-content" id="pianoRollContent">
+            <div class="piano-roll-grid" id="pianoRollGrid"></div>
+
+            <div
+              class="piano-roll-tempo-layer"
+              id="pianoRollTempoLayer"
+            ></div>
+
+            <div
+              class="piano-roll-rest-layer"
+              id="pianoRollRestLayer"
+            ></div>
+
+            <div
+              class="piano-roll-node-layer"
+              id="pianoRollNodeLayer"
+            ></div>
+
+            <div
+              class="piano-roll-playhead"
+              id="pianoRollPlayhead"
+              style="display:none;"
+            ></div>
+
+            <!-- Existing Canvas compatibility target -->
+            <canvas
+              id="pianoRollCanvas"
+              aria-hidden="true"
+              style="display:none;"
+            ></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="padding:10px;">
+        <button id="pianoRollClose">Close</button>
+      </div>
+    </section>
   </div>
 </div>
 
+<!-- Note properties modal -->
 <div class="modal-overlay" id="notePropsModal">
   <div class="modal-dialog" style="max-width:500px;">
     <h3>Note Properties</h3>
-    
-    <label>Pitch:</label>
-    <input type="text" id="propPitch" placeholder="C4" />
-    
-    <label>Start (beat):</label>
-    <input type="number" id="propStart" step="0.0625" min="0" />
-    
-    <label>Duration (beat):</label>
-    <input type="number" id="propDuration" step="0.0625" min="0.0625" />
-    
-    <label>Microtone (cents):</label>
+
+    <label for="propPitch">Pitch:</label>
+    <input id="propPitch" type="text" placeholder="C4">
+
+    <label for="propStart">Start (beat):</label>
+    <input id="propStart" type="number" step="0.001" min="0">
+
+    <label for="propDuration">Duration (beat):</label>
+    <input id="propDuration" type="number" step="0.001" min="0.001">
+
+    <label for="propMicrotone">Microtone (cents):</label>
     <select id="propMicrotone">
       <option value="-50">-50 cents</option>
       <option value="0">0 cents</option>
       <option value="50">+50 cents</option>
     </select>
-    
-    <label><input type="checkbox" id="propSlur" /> Slur (~)</label>
-    <label><input type="checkbox" id="propBypass" /> Key bypass (!)</label>
-    
-    <label>Lyric:</label>
-    <input type="text" id="propLyric" placeholder="e.g., あ" />
-    
+
+    <label>
+      <input id="propSlur" type="checkbox">
+      Slur (~)
+    </label>
+
+    <label>
+      <input id="propBypass" type="checkbox">
+      Key bypass (!)
+    </label>
+
+    <label for="propLyric">Lyric:</label>
+    <input id="propLyric" type="text" placeholder="e.g., あ">
+
     <div class="modal-actions">
       <button id="propCancel">Cancel</button>
       <button id="propOk" class="primary">Apply</button>
@@ -792,36 +1110,62 @@ textarea {
   </div>
 </div>
 
+<!-- Sound plugin modal -->
 <div class="modal-overlay" id="soundPluginModal">
   <div class="modal-dialog" style="max-width:500px;">
     <h3>Sound Plugin α</h3>
-    <input id="pluginFileInput" type="file" accept=".js" style="display:none;" />
-    <button id="loadPluginBtn" style="width:100%; margin-bottom:15px;">Load .js Plugin</button>
-    <div id="soundList" style="max-height:200px; overflow-y:auto; font-size:11px;">
-      <div style="color:#9aa;">Standard sounds</div>
-    </div>
-    <div class="modal-actions" style="margin-top:15px;">
+
+    <input
+      id="pluginFileInput"
+      type="file"
+      accept=".js"
+      style="display:none;"
+    >
+
+    <button
+      id="loadPluginBtn"
+      style="width:100%;margin-bottom:15px;"
+    >
+      Load .js Plugin
+    </button>
+
+    <div
+      id="soundList"
+      style="max-height:200px;overflow-y:auto;font-size:11px;"
+    ></div>
+
+    <div class="modal-actions">
       <button id="soundPluginClose">Close</button>
     </div>
   </div>
 </div>
 
+<!-- Apply warning modal -->
 <div class="modal-overlay" id="unsavedPianoRollModal">
   <div class="modal-dialog" style="max-width:500px;">
     <h3>未反映の変更があります</h3>
-    <p style="margin-bottom:15px; font-size:13px;">ピアノロールの変更がEditorに反映されていません。Editorへ反映してから保存しますか？</p>
+
+    <p style="margin-bottom:15px;font-size:13px;">
+      ピアノロールの変更がEditorに反映されていません。Editorへ反映してから保存しますか？
+    </p>
+
     <div class="modal-actions">
-      <button id="unsavedYesBtn" class="primary">Yes - 反映して保存</button>
-      <button id="unsavedNoBtn">No - そのまま保存</button>
+      <button id="unsavedYesBtn" class="primary">Yes</button>
+      <button id="unsavedNoBtn">No</button>
       <button id="unsavedCancelBtn">Cancel</button>
     </div>
   </div>
 </div>
 
+<!-- Conflict modal -->
 <div class="modal-overlay" id="conflictModal">
   <div class="modal-dialog" style="max-width:500px;">
     <h3>Piano RollとEditorの競合</h3>
-    <p style="margin-bottom:15px; font-size:13px;">Piano RollとEditorの内容が異なっています。どちらを使用しますか？</p>
+
+    <p style="margin-bottom:15px;font-size:13px;">
+      Piano RollとEditorの内容が異なっています。どちらを使用しますか？
+    </p>
+
     <div class="modal-actions">
       <button id="conflictPianoBtn">Piano Roll</button>
       <button id="conflictEditorBtn">Editor</button>
@@ -830,10 +1174,15 @@ textarea {
   </div>
 </div>
 
+<!-- Backup modal -->
 <div class="modal-overlay" id="backupModal">
   <div class="modal-dialog" style="max-width:500px;">
     <h3>前回のバックアップを検出</h3>
-    <p style="margin-bottom:15px; font-size:13px;">前回のPiano Roll編集データが見つかりました。復元しますか？</p>
+
+    <p style="margin-bottom:15px;font-size:13px;">
+      前回のPiano Roll編集データが見つかりました。復元しますか？
+    </p>
+
     <div class="modal-actions">
       <button id="backupRestoreBtn" class="primary">復元</button>
       <button id="backupDiscardBtn">破棄</button>
@@ -841,10 +1190,18 @@ textarea {
   </div>
 </div>
 
+<!-- Save warning modal -->
 <div class="modal-overlay" id="saveWarningModal">
   <div class="modal-dialog" style="max-width:500px;">
     <h3>未反映の変更があります</h3>
-    <p style="margin-bottom:15px; font-size:13px;" id="saveWarningText">変更内容を確認してください。</p>
+
+    <p
+      id="saveWarningText"
+      style="margin-bottom:15px;font-size:13px;"
+    >
+      ピアノロールの変更がEditorに反映されていません。
+    </p>
+
     <div class="modal-actions">
       <button id="saveWarningYesBtn" class="primary">Yes</button>
       <button id="saveWarningNoBtn">No</button>
@@ -854,1989 +1211,14 @@ textarea {
 </div>
 
 <script>
-// ===== CONSTANTS =====
-
-const VALID_INSTRUMENTS = new Set([
-  'piano', 'grand_piano', 'synth', 'synth_lead', 'synth_bass', 'bass', 'drum', 'kick',
-  'hihat', 'hi_hat', 'snare', 'sine', 'square', 'triangle', 'saw', 'sawtooth'
-]);
-
-const KEY_SCALES = {
-  'C': [0, 2, 4, 5, 7, 9, 11], 'G': [7, 9, 11, 0, 2, 4, 6],
-  'D': [2, 4, 6, 7, 9, 11, 1], 'A': [9, 11, 1, 2, 4, 6, 8],
-  'E': [4, 6, 8, 9, 11, 1, 3], 'B': [11, 1, 3, 4, 6, 8, 10],
-  'F#': [6, 8, 10, 11, 1, 3, 5], 'F': [5, 7, 9, 10, 0, 2, 4],
-  'Bb': [10, 0, 2, 3, 5, 7, 9], 'Eb': [3, 5, 7, 8, 10, 0, 2],
-  'Ab': [8, 10, 0, 1, 3, 5, 7], 'Db': [1, 3, 5, 6, 8, 10, 0],
-  'Am': [9, 11, 0, 2, 4, 5, 7], 'Em': [4, 5, 7, 9, 11, 0, 2],
-  'Bm': [11, 0, 2, 4, 6, 7, 9], 'F#m': [6, 7, 9, 11, 1, 3, 5],
-  'C#m': [1, 2, 4, 6, 8, 9, 11], 'G#m': [8, 9, 11, 1, 3, 5, 7],
-  'Dm': [2, 3, 5, 7, 9, 10, 0], 'Gm': [7, 8, 10, 0, 2, 3, 5],
-  'Cm': [0, 1, 3, 5, 7, 8, 10], 'Fm': [5, 6, 8, 10, 0, 1, 3]
-};
-
-const NOTE_TABLE = {
-  'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
-  'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
-  'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
-};
-
-const TRACK_COLORS = [
-  '#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731', '#5f27cd',
-  '#00d2d3', '#ff9ff3', '#54a0ff', '#48dbfb', '#1dd1a1'
-];
-
-// ===== PROJECT MODEL =====
-
-const Project = {
-  tempo: 120,
-  key: 'C',
-  timeSignature: '4/4',
-  tracks: [],
-  tempoMap: [[0, 120]],
-  pluginSounds: new Set()
-};
-
-// ===== UI STATE =====
-
-let selectedTrackId = null;
-let selectedTrackIdInPianoRoll = null;
-let audioCtx = null;
-
-let playbackState = {
-  playing: false,
-  timers: [],
-  nodes: [],
-  tracks: {},
-  cursorPos: 0,
-  cursorUpdateInterval: null
-};
-
-let pianoRollState = {
-  mode: 'select',
-  selectedNoteIds: new Set(),
-  selectedEventIds: new Set(),
-  timeScale: 80,
-  noteHeight: 20,
-  scrollX: 0,
-  scrollY: 0,
-  isDragging: false,
-  dragStartPos: { x: 0, y: 0 },
-  dragStartData: null,
-  undoStack: [],
-  redoStack: [],
-  isOpen: false,
-  hasUnappliedChanges: false,
-  editorHash: '',
-  pianoRollHash: ''
-};
-
-const el = {
-  fileInput: document.getElementById('fileInput'),
-  openBtn: document.getElementById('openBtn'),
-  saveBtn: document.getElementById('saveBtn'),
-  playBtn: document.getElementById('playBtn'),
-  stopBtn: document.getElementById('stopBtn'),
-  pianoRollBtn: document.getElementById('pianoRollBtn'),
-  soundPluginBtn: document.getElementById('soundPluginBtn'),
-  themeToggle: document.getElementById('themeToggle'),
-  codeEditor: document.getElementById('codeEditor'),
-  lineNumbers: document.getElementById('lineNumbers'),
-  highlightLayer: document.getElementById('highlightLayer'),
-  trackList: document.getElementById('trackList'),
-  consoleOutput: document.getElementById('consoleOutput'),
-  projectInfo: document.getElementById('projectInfo'),
-  tabs: document.getElementById('tabs'),
-  addTrackBtn: document.getElementById('addTrackBtn'),
-  renameTrackBtn: document.getElementById('renameTrackBtn'),
-  deleteTrackBtn: document.getElementById('deleteTrackBtn'),
-  trackModal: document.getElementById('trackModal'),
-  modalTitle: document.getElementById('modalTitle'),
-  trackNameInput: document.getElementById('trackNameInput'),
-  trackColorInput: document.getElementById('trackColorInput'),
-  trackInstrumentInput: document.getElementById('trackInstrumentInput'),
-  modalOk: document.getElementById('modalOk'),
-  modalCancel: document.getElementById('modalCancel'),
-  pianoRollModal: document.getElementById('pianoRollModal'),
-  pianoRollTrackTabs: document.getElementById('pianoRollTrackTabs'),
-  pianoRollClose: document.getElementById('pianoRollClose'),
-  pianoRollCanvas: document.getElementById('pianoRollCanvas'),
-  pianoKeys: document.getElementById('pianoKeys'),
-  pianoRollContainer: document.getElementById('pianoRollContainer'),
-  pianoRollZoomIn: document.getElementById('pianoRollZoomIn'),
-  pianoRollZoomOut: document.getElementById('pianoRollZoomOut'),
-  modeSelect: document.getElementById('modeSelect'),
-  modePencil: document.getElementById('modePencil'),
-  modeEraser: document.getElementById('modeEraser'),
-  inputLength: document.getElementById('inputLength'),
-  snapGrid: document.getElementById('snapGrid'),
-  undoBtn: document.getElementById('undoBtn'),
-  redoBtn: document.getElementById('redoBtn'),
-  pianoRollApplyBtn: document.getElementById('pianoRollApplyBtn'),
-  applyStatusIndicator: document.getElementById('applyStatusIndicator'),
-  notePropsModal: document.getElementById('notePropsModal'),
-  propPitch: document.getElementById('propPitch'),
-  propStart: document.getElementById('propStart'),
-  propDuration: document.getElementById('propDuration'),
-  propMicrotone: document.getElementById('propMicrotone'),
-  propSlur: document.getElementById('propSlur'),
-  propBypass: document.getElementById('propBypass'),
-  propLyric: document.getElementById('propLyric'),
-  propCancel: document.getElementById('propCancel'),
-  propOk: document.getElementById('propOk'),
-  soundPluginModal: document.getElementById('soundPluginModal'),
-  soundPluginClose: document.getElementById('soundPluginClose'),
-  loadPluginBtn: document.getElementById('loadPluginBtn'),
-  pluginFileInput: document.getElementById('pluginFileInput'),
-  soundList: document.getElementById('soundList'),
-  exportWavBtn: document.getElementById('exportWavBtn'),
-  exportMidiBtn: document.getElementById('exportMidiBtn'),
-  exportSsBtn: document.getElementById('exportSsBtn'),
-  unsavedPianoRollModal: document.getElementById('unsavedPianoRollModal'),
-  unsavedYesBtn: document.getElementById('unsavedYesBtn'),
-  unsavedNoBtn: document.getElementById('unsavedNoBtn'),
-  unsavedCancelBtn: document.getElementById('unsavedCancelBtn'),
-  conflictModal: document.getElementById('conflictModal'),
-  conflictPianoBtn: document.getElementById('conflictPianoBtn'),
-  conflictEditorBtn: document.getElementById('conflictEditorBtn'),
-  conflictCancelBtn: document.getElementById('conflictCancelBtn'),
-  backupModal: document.getElementById('backupModal'),
-  backupRestoreBtn: document.getElementById('backupRestoreBtn'),
-  backupDiscardBtn: document.getElementById('backupDiscardBtn'),
-  saveWarningModal: document.getElementById('saveWarningModal'),
-  saveWarningText: document.getElementById('saveWarningText'),
-  saveWarningYesBtn: document.getElementById('saveWarningYesBtn'),
-  saveWarningNoBtn: document.getElementById('saveWarningNoBtn'),
-  saveWarningCancelBtn: document.getElementById('saveWarningCancelBtn')
-};
-
-// ===== UTILITIES =====
-
-function uid(prefix = 'id') {
-  return prefix + '-' + Math.random().toString(36).slice(2, 9);
-}
-
-function log(msg, type = 'info') {
-  const line = document.createElement('div');
-  line.className = 'console-line ' + type;
-  line.textContent = msg;
-  el.consoleOutput.appendChild(line);
-  el.consoleOutput.scrollTop = el.consoleOutput.scrollHeight;
-}
-
-function escapeHtml(s) {
-  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-  return String(s).replace(/[&<>"']/g, c => map[c]);
-}
-
-function simpleHash(str) {
-  let hash = 0;
-  if (str.length === 0) return hash;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return hash.toString(36);
-}
-
-// ===== THEME =====
-
-el.themeToggle.addEventListener('click', () => {
-  const isDark = document.body.classList.toggle('dark');
-  document.body.classList.toggle('light', !isDark);
-  el.themeToggle.textContent = isDark ? '☀ Light' : '☾ Dark';
-  localStorage.setItem('sws-theme', isDark ? 'dark' : 'light');
-  if (pianoRollState.isOpen) drawPianoRoll();
-});
-
-function initTheme() {
-  const saved = localStorage.getItem('sws-theme') || 'dark';
-  if (saved === 'light') {
-    document.body.classList.remove('dark');
-    document.body.classList.add('light');
-    el.themeToggle.textContent = '☾ Dark';
-  }
-}
-
-// ===== TRACK MANAGEMENT =====
-
-function createTrack(name) {
-  const track = {
-    id: uid('track'),
-    name: name || `Track ${Project.tracks.length + 1}`,
-    color: TRACK_COLORS[Project.tracks.length % TRACK_COLORS.length],
-    instrument: 'piano',
-    code: '',
-    events: []
-  };
-  Project.tracks.push(track);
-  renderTabs();
-  renderTrackList();
-  selectTrack(track.id);
-  return track;
-}
-
-function deleteTrack(id) {
-  if (Project.tracks.length <= 1) {
-    log('At least one track must remain', 'error');
-    return false;
-  }
-  Project.tracks = Project.tracks.filter(t => t.id !== id);
-  renderTabs();
-  renderTrackList();
-  if (Project.tracks.length) selectTrack(Project.tracks[0].id);
-  log(`Track deleted`, 'info');
-  return true;
-}
-
-function renameTrack(id, name) {
-  const track = Project.tracks.find(t => t.id === id);
-  if (!track) return;
-  const newName = (name || '').trim() || track.name;
-  if (newName.length > 0 && newName.length <= 50) {
-    track.name = newName;
-  }
-  renderTabs();
-  renderTrackList();
-}
-
-function selectTrack(id) {
-  const track = Project.tracks.find(t => t.id === id);
-  if (!track) return;
-  selectedTrackId = id;
-  el.codeEditor.value = track.code || '';
-  updateLineNumbers();
-  updateHighlight();
-  renderTabs();
-  renderTrackList();
-  el.codeEditor.focus();
-}
-
-function saveEditorToTrack() {
-  const track = Project.tracks.find(t => t.id === selectedTrackId);
-  if (track) track.code = el.codeEditor.value;
-}
-
-// ===== RENDER UI =====
-
-function renderTabs() {
-  el.tabs.innerHTML = '';
-  Project.tracks.forEach(track => {
-    const tab = document.createElement('div');
-    tab.className = 'tab' + (track.id === selectedTrackId ? ' active' : '');
-    tab.innerHTML = `
-      <span style="width:10px;height:10px;border-radius:50%;background:${escapeHtml(track.color)};display:inline-block"></span>
-      <span>${escapeHtml(track.name)}</span>
-      <span class="close">✕</span>
-    `;
-    tab.addEventListener('click', (e) => {
-      if (e.target.classList.contains('close')) {
-        if (confirm(`Delete "${track.name}"?`)) deleteTrack(track.id);
-        return;
-      }
-      selectTrack(track.id);
-    });
-    el.tabs.appendChild(tab);
-  });
-}
-
-function renderTrackList() {
-  el.trackList.innerHTML = '';
-  Project.tracks.forEach(track => {
-    const div = document.createElement('div');
-    div.className = 'track-item' + (track.id === selectedTrackId ? ' selected' : '');
-    
-    const state = playbackState.tracks[track.id];
-    let statusText = '';
-    if (playbackState.playing && state && state.activeLines && state.activeLines.size > 0) {
-      const lines = Array.from(state.activeLines).sort((a, b) => a - b).slice(0, 2);
-      statusText = '▶ ' + lines.join(',');
-    }
-    
-    div.innerHTML = `
-      <div class="track-dot" style="background:${escapeHtml(track.color)}"></div>
-      <div class="track-name">${escapeHtml(track.name)}</div>
-      <div class="track-status">${escapeHtml(statusText)}</div>
-    `;
-    div.addEventListener('click', () => selectTrack(track.id));
-    el.trackList.appendChild(div);
-  });
-}
-
-function updateLineNumbers() {
-  const text = el.codeEditor.value || '';
-  const lines = text.split(/\r?\n/);
-  let html = '';
-  for (let i = 0; i < lines.length; i++) {
-    html += (i + 1) + '\n';
-  }
-  el.lineNumbers.textContent = html;
-}
-
-function syncScroll() {
-  el.highlightLayer.scrollTop = el.codeEditor.scrollTop;
-  el.highlightLayer.scrollLeft = el.codeEditor.scrollLeft;
-  el.lineNumbers.scrollTop = el.codeEditor.scrollTop;
-}
-
-// ===== SYNTAX HIGHLIGHTING (Lexer) =====
-
-class SWSLexer {
-  constructor(code) {
-    this.code = code;
-    this.pos = 0;
-    this.line = 1;
-    this.tokens = [];
-  }
-  
-  tokenize() {
-    while (this.pos < this.code.length) {
-      this.skipWsExceptNl();
-      if (this.pos >= this.code.length) break;
-      
-      if (this.tryComment()) continue;
-      if (this.tryString()) continue;
-      if (this.tryPitch()) continue;
-      if (this.tryNumber()) continue;
-      if (this.tryIdentifier()) continue;
-      if (this.tryCnt()) continue;
-      if (this.trySymbol()) continue;
-      
-      this.pos++;
-    }
-    return this.tokens;
-  }
-  
-  skipWsExceptNl() {
-    while (this.pos < this.code.length && /[ \t\r]/.test(this.code[this.pos])) {
-      this.pos++;
-    }
-    if (this.pos < this.code.length && this.code[this.pos] === '\n') {
-      this.line++;
-      this.pos++;
-      this.skipWsExceptNl();
-    }
-  }
-  
-  tryComment() {
-    if (this.code[this.pos] === '<') {
-      const start = this.pos;
-      this.pos++;
-      while (this.pos < this.code.length && this.code[this.pos] !== '>') {
-        if (this.code[this.pos] === '\n') this.line++;
-        this.pos++;
-      }
-      if (this.pos < this.code.length) this.pos++;
-      this.tokens.push({ type: 'comment', value: this.code.substring(start, this.pos), line: this.line });
-      return true;
-    }
-    return false;
-  }
-  
-  tryString() {
-    const ch = this.code[this.pos];
-    if (ch === '"' || ch === "'") {
-      const start = this.pos;
-      const quote = ch;
-      this.pos++;
-      while (this.pos < this.code.length && this.code[this.pos] !== quote) {
-        if (this.code[this.pos] === '\\' && this.pos + 1 < this.code.length) this.pos++;
-        this.pos++;
-      }
-      if (this.pos < this.code.length) this.pos++;
-      this.tokens.push({ type: 'string', value: this.code.substring(start, this.pos), line: this.line });
-      return true;
-    }
-    return false;
-  }
-  
-  tryPitch() {
-    const m = this.code.substr(this.pos).match(/^[A-Ga-g](#|b)?(\+|-)?(\d+)?/);
-    if (m && m[3]) {
-      const start = this.pos;
-      this.pos += m[0].length;
-      this.tokens.push({ type: 'pitch', value: m[0], line: this.line });
-      return true;
-    }
-    return false;
-  }
-  
-  tryNumber() {
-    if (/[0-9]/.test(this.code[this.pos])) {
-      const start = this.pos;
-      while (this.pos < this.code.length && /[0-9+]/.test(this.code[this.pos])) {
-        this.pos++;
-      }
-      this.tokens.push({ type: 'number', value: this.code.substring(start, this.pos), line: this.line });
-      return true;
-    }
-    return false;
-  }
-  
-  tryIdentifier() {
-    if (/[A-Za-z_]/.test(this.code[this.pos])) {
-      const start = this.pos;
-      while (this.pos < this.code.length && /[A-Za-z0-9_]/.test(this.code[this.pos])) {
-        this.pos++;
-      }
-      const word = this.code.substring(start, this.pos);
-      const type = this.getTokenType(word.toLowerCase());
-      this.tokens.push({ type, value: word, line: this.line });
-      return true;
-    }
-    return false;
-  }
-  
-  tryCnt() {
-    if (this.code.substr(this.pos, 5).toLowerCase() === '-cnt-') {
-      this.tokens.push({ type: 'cnt', value: '-cnt-', line: this.line });
-      this.pos += 5;
-      return true;
-    }
-    return false;
-  }
-  
-  trySymbol() {
-    if (/[+\-*\/()[\]{},;=:.<>!|&~]/.test(this.code[this.pos])) {
-      this.tokens.push({ type: 'symbol', value: this.code[this.pos], line: this.line });
-      this.pos++;
-      return true;
-    }
-    return false;
-  }
-  
-  getTokenType(word) {
-    if (['snd', 'tempoconst', 'newtempo', 'key', 'sleep', 'chips', 'lp'].includes(word)) return 'blue';
-    if (['piano', 'grand_piano', 'synth', 'synth_lead', 'synth_bass', 'bass', 'drum', 'kick', 'hihat', 'hi_hat', 'snare', 'sine', 'square', 'triangle', 'saw', 'sawtooth'].includes(word)) return 'blue';
-    if (['output'].includes(word)) return 'red';
-    if (Project.pluginSounds.has(word)) return 'orange';
-    return 'text';
-  }
-}
-
-function updateHighlight() {
-  const code = el.codeEditor.value || '';
-  const lexer = new SWSLexer(code);
-  const tokens = lexer.tokenize();
-  
-  const lines = code.split(/\r?\n/);
-  const lineHtmls = lines.map(() => '');
-  
-  tokens.forEach(token => {
-    const className = getSyntaxClass(token.type);
-    const escaped = escapeHtml(token.value);
-    let lineIdx = token.line - 1;
-    if (lineIdx < lineHtmls.length) {
-      lineHtmls[lineIdx] += `<span class="${className}">${escaped}</span>`;
-    }
-  });
-  
-  const html = lineHtmls.map((content, i) => {
-    const ln = i + 1;
-    const state = playbackState.tracks[selectedTrackId];
-    const isPlaying = playbackState.playing && state && state.activeLines && state.activeLines.has(ln);
-    return `<div style="min-height:calc(var(--editor-line)*var(--editor-size));${isPlaying ? 'background:rgba(33,150,243,0.15);' : ''}">${content}</div>`;
-  }).join('');
-  
-  el.highlightLayer.innerHTML = html;
-  syncScroll();
-}
-
-function getSyntaxClass(type) {
-  const map = {
-    'blue': 'syn-blue', 'yellow': 'syn-yellow', 'green': 'syn-green',
-    'red': 'syn-red', 'orange': 'syn-orange', 'cnt': 'syn-teal',
-    'comment': 'syn-comment', 'string': 'syn-string', 'number': 'syn-number',
-    'pitch': 'syn-pitch', 'text': 'syn-text'
-  };
-  return map[type] || 'syn-text';
-}
-
-// ===== EDITOR EVENTS =====
-
-el.codeEditor.addEventListener('input', () => {
-  updateLineNumbers();
-  saveEditorToTrack();
-  updateHighlight();
-});
-
-el.codeEditor.addEventListener('scroll', syncScroll);
-
-// ===== TRACK MODAL =====
-
-function showTrackModal(trackId = null) {
-  const track = trackId ? Project.tracks.find(t => t.id === trackId) : null;
-  
-  if (track) {
-    el.modalTitle.textContent = 'Edit Track';
-    el.trackNameInput.value = track.name;
-    el.trackColorInput.value = track.color;
-    el.trackInstrumentInput.value = track.instrument;
-    el.modalOk.onclick = () => {
-      renameTrack(track.id, el.trackNameInput.value);
-      track.color = el.trackColorInput.value;
-      track.instrument = el.trackInstrumentInput.value;
-      el.trackModal.classList.remove('active');
-      renderTabs();
-      renderTrackList();
-      if (pianoRollState.isOpen) drawPianoRoll();
-    };
-  } else {
-    el.modalTitle.textContent = 'Add Track';
-    el.trackNameInput.value = '';
-    el.trackColorInput.value = TRACK_COLORS[Project.tracks.length % TRACK_COLORS.length];
-    el.trackInstrumentInput.value = 'piano';
-    el.modalOk.onclick = () => {
-      const name = el.trackNameInput.value.trim();
-      if (name) createTrack(name);
-      el.trackModal.classList.remove('active');
-      if (pianoRollState.isOpen) drawPianoRoll();
-    };
-  }
-  
-  el.trackModal.classList.add('active');
-}
-
-el.addTrackBtn.addEventListener('click', showTrackModal);
-el.renameTrackBtn.addEventListener('click', () => {
-  if (selectedTrackId) showTrackModal(selectedTrackId);
-});
-el.deleteTrackBtn.addEventListener('click', () => {
-  if (selectedTrackId && confirm('Delete this track?')) deleteTrack(selectedTrackId);
-});
-
-el.modalCancel.addEventListener('click', () => el.trackModal.classList.remove('active'));
-
-// ===== FILE LOADING =====
-
-el.openBtn.addEventListener('click', () => el.fileInput.click());
-
-el.fileInput.addEventListener('change', (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    try {
-      const content = ev.target.result;
-      const name = (file.name || '').toLowerCase();
-      if (name.endsWith('.ust')) {
-        loadUstFile(content);
-      } else {
-        loadSsFile(content);
-        log('Loaded .ss', 'success');
-      }
-    } catch (err) {
-      log('Load error: ' + err.message, 'error');
-    }
-  };
-  reader.readAsText(file);
-  el.fileInput.value = '';
-});
-
-function loadSsFile(content) {
-  try {
-    const tempProject = {
-      tempo: 120,
-      key: 'C',
-      timeSignature: '4/4',
-      tracks: [],
-      tempoMap: [[0, 120]],
-      pluginSounds: Project.pluginSounds
-    };
-    
-    const lines = content.split(/\r?\n/);
-    const classNames = new Set();
-    
-    lines.forEach(line => {
-      const m = line.match(/class\s*=\s*["']([^"']+)["']/i);
-      if (m) classNames.add(m[1]);
-    });
-    
-    const trackMap = new Map();
-    if (classNames.size > 0) {
-      Array.from(classNames).forEach(name => {
-        const track = {
-          id: uid('track'),
-          name: name,
-          color: TRACK_COLORS[tempProject.tracks.length % TRACK_COLORS.length],
-          instrument: 'piano',
-          code: '',
-          events: []
-        };
-        tempProject.tracks.push(track);
-        trackMap.set(name, track);
-      });
-    }
-    
-    const mainTrack = {
-      id: uid('track'),
-      name: 'main',
-      color: TRACK_COLORS[tempProject.tracks.length % TRACK_COLORS.length],
-      instrument: 'piano',
-      code: '',
-      events: []
-    };
-    tempProject.tracks.push(mainTrack);
-    trackMap.set('main', mainTrack);
-    
-    lines.forEach(line => {
-      const m = line.match(/class\s*=\s*["']([^"']+)["']/i);
-      if (m) {
-        const name = m[1];
-        const t = trackMap.get(name);
-        if (t) t.code += line + '\n';
-      } else {
-        if (mainTrack) mainTrack.code += line + '\n';
-      }
-    });
-    
-    Project.tempo = tempProject.tempo;
-    Project.key = tempProject.key;
-    Project.timeSignature = tempProject.timeSignature;
-    Project.tracks = tempProject.tracks;
-    Project.tempoMap = tempProject.tempoMap;
-    
-    renderTabs();
-    renderTrackList();
-    if (Project.tracks.length) selectTrack(Project.tracks[0].id);
-  } catch (err) {
-    log('SS error: ' + err.message, 'error');
-  }
-}
-
-function loadUstFile(content) {
-  try {
-    const lines = content.split(/\r?\n/);
-    let tempo = 120;
-    let notes = [];
-    let currentNote = null;
-    let section = '';
-    
-    lines.forEach((line, idx) => {
-      line = line.trim();
-      if (line.startsWith('[#')) {
-        if (line === '[#SETTING]') section = 'SETTING';
-        else if (line === '[#TRACKEND]') {
-          if (currentNote) notes.push(currentNote);
-          section = 'END';
-        } else if (/^\[#[0-9]+\]$/.test(line)) {
-          if (currentNote) notes.push(currentNote);
-          currentNote = {};
-          section = 'NOTE';
-        }
-        return;
-      }
-      
-      if (section === 'SETTING' && line.includes('=')) {
-        const [k, v] = line.split('=', 2);
-        if (k.trim().toLowerCase() === 'tempo') {
-          tempo = parseFloat(v.trim()) || 120;
-        }
-      } else if (section === 'NOTE' && currentNote && line.includes('=')) {
-        const [k, v] = line.split('=', 2);
-        currentNote[k.trim()] = v.trim();
-      }
-    });
-    
-    if (currentNote) notes.push(currentNote);
-    
-    let ss = `tempoconst="${tempo}";\nkey="C";\n\n`;
-    notes.forEach(note => {
-      const lyric = (note.Lyric || '').trim();
-      const noteNum = parseInt(note.NoteNum || '60', 10);
-      const length = parseInt(note.Length || '480', 10);
-      
-      if (lyric.toUpperCase() === 'R') {
-        ss += `sleep(4);\n`;
-      } else {
-        const noteName = midiToNoteName(noteNum);
-        const denom = Math.round(4 * 480 / length);
-        ss += `snd("synth",${denom},${noteName});\n`;
-      }
-    });
-    
-    loadSsFile(ss);
-    log('UST loaded', 'success');
-  } catch (err) {
-    log('UST error: ' + err.message, 'error');
-  }
-}
-
-// ===== SERIALIZATION =====
-
-function serializeProjectToSS() {
-  let out = `tempoconst="${Project.tempo}";\n`;
-  out += `key="${Project.key}";\n\n`;
-  
-  Project.tracks.forEach(track => {
-    const lines = (track.code || '').split(/\r?\n/);
-    lines.forEach(line => {
-      if (!line.trim()) {
-        out += '\n';
-        return;
-      }
-      out += line + '\n';
-    });
-    out += '\n';
-  });
-  
-  return out;
-}
-
-function serializeEventsToSS(events, tracks) {
-  let out = `tempoconst="${Project.tempo}";\n`;
-  out += `key="${Project.key}";\n\n`;
-  
-  const eventsByTrack = new Map();
-  tracks.forEach(track => {
-    eventsByTrack.set(track.id, []);
-  });
-  
-  events.forEach(event => {
-    if (event.trackId && eventsByTrack.has(event.trackId)) {
-      eventsByTrack.get(event.trackId).push(event);
-    }
-  });
-  
-  tracks.forEach(track => {
-    const trackEvents = eventsByTrack.get(track.id) || [];
-    trackEvents.sort((a, b) => a.start - b.start);
-    
-    let currentTime = 0;
-    trackEvents.forEach(event => {
-      if (event.notes && event.notes.length > 0) {
-        if (event.start > currentTime) {
-          const gapBeats = event.start - currentTime;
-          out += `sleep(${Math.round(gapBeats * 4)});\n`;
-        }
-        
-        let sndCall = `snd("${event.instrument}",${Math.round(event.duration * 4)}`;
-        
-        if (event.notes.length === 1) {
-          const note = event.notes[0];
-          sndCall += `,${formatPitch(note)}`;
-        } else {
-          const pitches = event.notes.map(n => formatPitch(n)).join(',');
-          sndCall += `,fsn=[${pitches}]`;
-        }
-        
-        if (track.name !== 'main') {
-          sndCall += `,class="${track.name}"`;
-        }
-        
-        sndCall += ');';
-        out += sndCall + '\n';
-        
-        currentTime = event.start + event.duration;
-      }
-    });
-    
-    out += '\n';
-  });
-  
-  return out;
-}
-
-function formatPitch(note) {
-  if (!note || note.pitchName === 'null') return 'null';
-  let pitch = note.pitchName;
-  if (note.slur) pitch += '~';
-  if (note.keyBypass) pitch += '!';
-  return pitch;
-}
-
-el.saveBtn.addEventListener('click', () => {
-  saveEditorToTrack();
-  
-  if (pianoRollState.isOpen && pianoRollState.hasUnappliedChanges) {
-    el.saveWarningText.textContent = 'ピアノロールの変更がEditorに反映されていません。Editorへ反映してから保存しますか？';
-    el.saveWarningModal.classList.add('active');
-    
-    el.saveWarningYesBtn.onclick = () => {
-      el.saveWarningModal.classList.remove('active');
-      applyPianoRollToEditor();
-      performSave();
-    };
-    
-    el.saveWarningNoBtn.onclick = () => {
-      el.saveWarningModal.classList.remove('active');
-      performSave();
-    };
-    
-    el.saveWarningCancelBtn.onclick = () => {
-      el.saveWarningModal.classList.remove('active');
-    };
-  } else {
-    performSave();
-  }
-});
-
-function performSave() {
-  saveEditorToTrack();
-  const ss = serializeProjectToSS();
-  const blob = new Blob([ss], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'project.ss';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  log('Saved project.ss', 'success');
-}
-
-// ===== PITCH PARSING =====
-
-function parsePitch(token, key = 'C', bypass = false) {
-  if (!token || token === 'null') return { pitchName: 'null', midi: 60, cents: 0, slur: false, keyBypass: false };
-  
-  let pitch = token;
-  let slur = false;
-  let cents = 0;
-  
-  if (pitch.endsWith('~!') || pitch.endsWith('!~')) {
-    slur = true;
-    bypass = true;
-    pitch = pitch.slice(0, -2);
-  } else if (pitch.endsWith('~')) {
-    slur = true;
-    pitch = pitch.slice(0, -1);
-  } else if (pitch.endsWith('!')) {
-    bypass = true;
-    pitch = pitch.slice(0, -1);
-  }
-  
-  if (pitch.endsWith('+')) {
-    cents = 50;
-    pitch = pitch.slice(0, -1);
-  } else if (pitch.endsWith('-')) {
-    cents = -50;
-    pitch = pitch.slice(0, -1);
-  }
-  
-  pitch = pitch.trim();
-  if (!pitch || pitch === 'null') return { pitchName: 'null', midi: 60, cents, slur, keyBypass: bypass };
-  
-  const match = pitch.match(/^([A-Ga-g](?:#|b)?)(-?\d+)$/);
-  if (!match) return { pitchName: 'null', midi: 60, cents, slur, keyBypass: bypass };
-  
-  const name = match[1][0].toUpperCase() + (match[1][1] || '');
-  const octave = parseInt(match[2], 10);
-  const baseMidi = NOTE_TABLE[name] || 0;
-  let midiValue = (octave + 1) * 12 + baseMidi;
-  
-  if (!bypass && key in KEY_SCALES) {
-    const scale = KEY_SCALES[key];
-    const semiInOct = baseMidi % 12;
-    if (!scale.includes(semiInOct)) {
-      const best = scale.reduce((a, b) => 
-        Math.abs((b - semiInOct + 6) % 12 - 6) < Math.abs((a - semiInOct + 6) % 12 - 6) ? b : a
-      );
-      midiValue = (octave + 1) * 12 + best;
-    }
-  }
-  
-  if (midiValue < 0) midiValue = 0;
-  if (midiValue > 144) midiValue = 144;
-  
-  const pitchName = pitch + (cents > 0 ? '+' : cents < 0 ? '-' : '');
-  return { pitchName, midi: midiValue, cents, slur, keyBypass: bypass };
-}
-
-function midiToNoteName(midi) {
-  const names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  const octave = Math.floor(midi / 12) - 1;
-  const name = names[midi % 12];
-  return `${name}${octave}`;
-}
-
-function parseLengthToBeats(value) {
-  value = String(value).trim();
-  const dotted = value.endsWith('+');
-  const core = dotted ? value.slice(0, -1) : value;
-  if (!/^\d+$/.test(core)) return null;
-  const n = parseInt(core, 10);
-  if (n <= 0) return null;
-  let beats = 4.0 / n;
-  if (dotted) beats *= 1.5;
-  return beats;
-}
-
-// ===== COMPILER =====
-
-function compileCode(source, projectForCompile = null) {
-  const proj = projectForCompile || Project;
-  const events = [];
-  const lines = source.split(/\r?\n/);
-  let key = proj.key;
-  let tempo = proj.tempo;
-  
-  proj.tempoMap = [[0, tempo]];
-  
-  lines.forEach((line, lineIdx) => {
-    line = line.trim();
-    if (!line || line.startsWith('<')) return;
-    
-    const stmts = line.split(';').map(s => s.trim()).filter(s => s);
-    stmts.forEach(stmt => {
-      if (/^tempoconst\s*=\s*["']?([\d.]+)["']?$/i.test(stmt)) {
-        const m = stmt.match(/([\d.]+)/);
-        if (m) {
-          tempo = parseFloat(m[1]);
-          if (tempo > 999.9 || tempo <= 0) {
-            log(`Line ${lineIdx + 1} TempoError: ${tempo}`, 'error');
-            return;
-          }
-          proj.tempo = tempo;
-          proj.tempoMap[0] = [0, tempo];
-        }
-        return;
-      }
-      
-      if (/^key\s*=\s*["']?([A-Ga-g][#b]?m?)["']?$/i.test(stmt)) {
-        const m = stmt.match(/["']?([A-Ga-g][#b]?m?)["']?/);
-        if (m && m[1] in KEY_SCALES) {
-          key = m[1];
-          proj.key = key;
-        }
-        return;
-      }
-      
-      if (/^sleep\s*\(\s*([0-9.+]+)\s*\)$/i.test(stmt)) {
-        const m = stmt.match(/([\d.+]+)/);
-        if (m) {
-          const beats = parseLengthToBeats(m[1]);
-          if (beats) {
-            const event = {
-              id: uid('rest'),
-              type: 'rest',
-              start: 0,
-              duration: beats,
-              trackId: null,
-              line: lineIdx + 1
-            };
-            events.push(event);
-          }
-        }
-        return;
-      }
-      
-      if (/^snd\s*\(/.test(stmt)) {
-        const m = stmt.match(/^snd\s*\((.*)\)$/i);
-        if (m) {
-          compileSnd(m[1], lineIdx + 1, proj, key, events);
-        }
-        return;
-      }
-    });
-  });
-  
-  return events;
-}
-
-function compileSnd(argsStr, lineIdx, proj, key, events) {
-  const args = splitArgs(argsStr);
-  if (args.length < 3) {
-    log(`Line ${lineIdx} SyntaxError: snd needs 3+ args`, 'error');
-    return;
-  }
-  
-  const instrument = stripQuotes(args[0]).toLowerCase();
-  if (!VALID_INSTRUMENTS.has(instrument) && !proj.pluginSounds.has(instrument)) {
-    log(`Line ${lineIdx} InstrumentError: unknown ${instrument}`, 'error');
-    return;
-  }
-  
-  const beats = parseLengthToBeats(args[1]);
-  if (!beats) {
-    log(`Line ${lineIdx} LengthError: ${args[1]}`, 'error');
-    return;
-  }
-  
-  let notes = [];
-  const pitchArg = args[2].trim();
-  
-  if (/^fsn\s*=\s*\[/.test(pitchArg)) {
-    const match = pitchArg.match(/fsn\s*=\s*\[(.*)\]$/i);
-    if (match) {
-      const noteStrs = splitArgs(match[1]);
-      notes = noteStrs.map(n => {
-        const parsed = parsePitch(n.trim(), key);
-        parsed.id = uid('note');
-        return parsed;
-      });
-    }
-  } else {
-    const parsed = parsePitch(pitchArg, key);
-    parsed.id = uid('note');
-    notes = [parsed];
-  }
-  
-  let className = 'main';
-  let lyric = null;
-  
-  for (let i = 3; i < args.length; i++) {
-    if (!args[i].includes('=')) continue;
-    const [k, v] = args[i].split('=', 2);
-    if (k.trim().toLowerCase() === 'class') {
-      className = stripQuotes(v.trim());
-    } else if (k.trim().toLowerCase() === 'lyric') {
-      lyric = stripQuotes(v.trim());
-    }
-  }
-  
-  if (lyric) {
-    notes.forEach(n => {
-      if (n.pitchName !== 'null') n.lyric = lyric;
-    });
-  }
-  
-  const track = proj.tracks.find(t => t.name === className);
-  
-  const event = {
-    id: uid('ev'),
-    type: 'note',
-    instrument,
-    start: 0,
-    duration: beats,
-    notes,
-    className,
-    trackId: track?.id,
-    line: lineIdx
-  };
-  
-  events.push(event);
-}
-
-function splitArgs(text) {
-  const out = [];
-  let cur = '';
-  let depth = 0;
-  let inQ = false;
-  let qchar = '';
-  
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (inQ) {
-      cur += ch;
-      if (ch === qchar && text[i - 1] !== '\\') inQ = false;
-      continue;
-    }
-    if (ch === '"' || ch === "'") {
-      inQ = true;
-      qchar = ch;
-      cur += ch;
-      continue;
-    }
-    if (ch === '[') { depth++; cur += ch; continue; }
-    if (ch === ']') { depth--; cur += ch; continue; }
-    if (ch === ',' && depth === 0) {
-      if (cur.trim()) out.push(cur.trim());
-      cur = '';
-      continue;
-    }
-    cur += ch;
-  }
-  if (cur.trim()) out.push(cur.trim());
-  return out;
-}
-
-function stripQuotes(s) {
-  return s.replace(/^['"]|['"]$/g, '');
-}
-
-// ===== PIANO ROLL STATE MANAGEMENT =====
-
-function pushUndoState() {
-  const selectedTrack = Project.tracks.find(t => t.id === selectedTrackIdInPianoRoll);
-  if (!selectedTrack) return;
-  pianoRollState.redoStack = [];
-  pianoRollState.undoStack.push(JSON.stringify(JSON.parse(JSON.stringify(selectedTrack.events))));
-}
-
-function applyUndoState(stateStr) {
-  const selectedTrack = Project.tracks.find(t => t.id === selectedTrackIdInPianoRoll);
-  if (!selectedTrack) return;
-  selectedTrack.events = JSON.parse(stateStr);
-  markPianoRollAsModified();
-  drawPianoRoll();
-}
-
-function markPianoRollAsModified() {
-  pianoRollState.hasUnappliedChanges = true;
-  updateApplyStatus();
-}
-
-function updateApplyStatus() {
-  if (pianoRollState.hasUnappliedChanges) {
-    el.applyStatusIndicator.innerHTML = `
-      <span class="status-dot unapplied"></span>
-      <span>● 未反映</span>
-    `;
-    el.pianoRollApplyBtn.style.display = 'block';
-  } else {
-    el.applyStatusIndicator.innerHTML = `
-      <span class="status-dot applied"></span>
-      <span>✓ Editor反映済み</span>
-    `;
-    el.pianoRollApplyBtn.style.display = 'none';
-  }
-}
-
-// ===== PIANO ROLL TRACK TABS =====
-
-function renderPianoRollTrackTabs() {
-  el.pianoRollTrackTabs.innerHTML = '';
-  
-  Project.tracks.forEach(track => {
-    const tab = document.createElement('div');
-    tab.className = 'piano-roll-track-tab' + (track.id === selectedTrackIdInPianoRoll ? ' active' : '');
-    
-    const dot = document.createElement('div');
-    dot.className = 'track-dot';
-    dot.style.background = track.color;
-    
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = track.name;
-    
-    tab.appendChild(dot);
-    tab.appendChild(nameSpan);
-    
-    tab.addEventListener('click', () => {
-      selectedTrackIdInPianoRoll = track.id;
-      renderPianoRollTrackTabs();
-      drawPianoRoll();
-    });
-    
-    el.pianoRollTrackTabs.appendChild(tab);
-  });
-  
-  const addBtn = document.createElement('div');
-  addBtn.className = 'piano-roll-track-tab';
-  addBtn.textContent = '+ Track';
-  addBtn.addEventListener('click', showTrackModalInPianoRoll);
-  el.pianoRollTrackTabs.appendChild(addBtn);
-}
-
-function showTrackModalInPianoRoll() {
-  el.modalTitle.textContent = 'Add Track';
-  el.trackNameInput.value = '';
-  el.trackColorInput.value = TRACK_COLORS[Project.tracks.length % TRACK_COLORS.length];
-  el.trackInstrumentInput.value = 'piano';
-  el.modalOk.onclick = () => {
-    const name = el.trackNameInput.value.trim();
-    if (name) {
-      const track = createTrack(name);
-      selectedTrackIdInPianoRoll = track.id;
-      el.trackModal.classList.remove('active');
-      renderPianoRollTrackTabs();
-      drawPianoRoll();
-    }
-  };
-  el.trackModal.classList.add('active');
-}
-
-// ===== PIANO ROLL MAIN =====
-
-el.pianoRollBtn.addEventListener('click', () => {
-  if (selectedTrackId) {
-    saveEditorToTrack();
-    pianoRollState.isOpen = true;
-    selectedTrackIdInPianoRoll = selectedTrackId;
-    
-    const code = Project.tracks.map(t => t.code).join('\n');
-    const compiledEvents = compileCode(code);
-    
-    Project.tracks.forEach(track => {
-      track.events = compiledEvents.filter(e => e.trackId === track.id);
-    });
-    
-    pianoRollState.hasUnappliedChanges = false;
-    pianoRollState.undoStack = [];
-    pianoRollState.redoStack = [];
-    updateApplyStatus();
-    
-    el.pianoRollModal.classList.add('active');
-    renderPianoRollTrackTabs();
-    
-    setTimeout(() => {
-      drawPianoRoll();
-      attachCanvasEvents();
-    }, 100);
-  }
-});
-
-el.pianoRollClose.addEventListener('click', () => {
-  el.pianoRollModal.classList.remove('active');
-  pianoRollState.isOpen = false;
-  el.pianoRollCanvas.removeEventListener('pointerdown', onCanvasPointerDown);
-  el.pianoRollCanvas.removeEventListener('pointermove', onCanvasPointerMove);
-  el.pianoRollCanvas.removeEventListener('pointerup', onCanvasPointerUp);
-  el.pianoRollCanvas.removeEventListener('dblclick', onCanvasDblClick);
-});
-
-el.pianoRollApplyBtn.addEventListener('click', applyPianoRollToEditor);
-
-function applyPianoRollToEditor() {
-  const allEvents = [];
-  Project.tracks.forEach(track => {
-    allEvents.push(...track.events);
-  });
-  
-  const newCode = serializeEventsToSS(allEvents, Project.tracks);
-  const code = Project.tracks.map(t => t.code).join('\n');
-  
-  saveEditorToTrack();
-  el.codeEditor.value = newCode;
-  updateLineNumbers();
-  updateHighlight();
-  saveEditorToTrack();
-  
-  pianoRollState.hasUnappliedChanges = false;
-  updateApplyStatus();
-  log('Piano Roll: Applied to Editor', 'success');
-}
-
-// Mode buttons
-el.modeSelect.addEventListener('click', () => setMode('select'));
-el.modePencil.addEventListener('click', () => setMode('pencil'));
-el.modeEraser.addEventListener('click', () => setMode('eraser'));
-
-function setMode(mode) {
-  pianoRollState.mode = mode;
-  el.modeSelect.classList.toggle('active', mode === 'select');
-  el.modePencil.classList.toggle('active', mode === 'pencil');
-  el.modeEraser.classList.toggle('active', mode === 'eraser');
-}
-
-el.pianoRollZoomIn.addEventListener('click', () => {
-  pianoRollState.timeScale *= 1.2;
-  drawPianoRoll();
-});
-
-el.pianoRollZoomOut.addEventListener('click', () => {
-  pianoRollState.timeScale /= 1.2;
-  drawPianoRoll();
-});
-
-el.undoBtn.addEventListener('click', () => {
-  if (pianoRollState.undoStack.length) {
-    const state = pianoRollState.undoStack.pop();
-    const selectedTrack = Project.tracks.find(t => t.id === selectedTrackIdInPianoRoll);
-    if (selectedTrack) {
-      pianoRollState.redoStack.push(JSON.stringify(JSON.parse(JSON.stringify(selectedTrack.events))));
-      applyUndoState(state);
-    }
-  }
-});
-
-el.redoBtn.addEventListener('click', () => {
-  if (pianoRollState.redoStack.length) {
-    const state = pianoRollState.redoStack.pop();
-    const selectedTrack = Project.tracks.find(t => t.id === selectedTrackIdInPianoRoll);
-    if (selectedTrack) {
-      pianoRollState.undoStack.push(JSON.stringify(JSON.parse(JSON.stringify(selectedTrack.events))));
-      applyUndoState(state);
-    }
-  }
-});
-
-// ===== PIANO ROLL DRAWING =====
-
-function drawPianoRoll() {
-  const canvas = el.pianoRollCanvas;
-  if (!canvas) return;
-  
-  const container = el.pianoRollContainer;
-  const containerHeight = container.clientHeight;
-  const containerWidth = container.clientWidth - 70;
-  
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.max(1200, containerWidth) * dpr;
-  canvas.height = Math.max(400, containerHeight) * dpr;
-  
-  canvas.style.width = (canvas.width / dpr) + 'px';
-  canvas.style.height = (canvas.height / dpr) + 'px';
-  
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  
-  const bgColor = getComputedStyle(document.body).getPropertyValue('--bg').trim() || '#0a0a0a';
-  ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
-  
-  const borderColor = getComputedStyle(document.body).getPropertyValue('--border').trim() || '#222';
-  ctx.strokeStyle = borderColor;
-  ctx.lineWidth = 1;
-  
-  const noteHeight = pianoRollState.noteHeight;
-  const pianoHeight = 145 * noteHeight;
-  
-  for (let i = 0; i <= 145; i++) {
-    const y = i * noteHeight;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width / dpr, y);
-    ctx.stroke();
-  }
-  
-  const selectedTrack = Project.tracks.find(t => t.id === selectedTrackIdInPianoRoll);
-  if (!selectedTrack) return;
-  
-  Project.tracks.forEach(track => {
-    if (track === selectedTrack) return;
-    drawTrackEvents(ctx, track, noteHeight, canvas.width / dpr, false);
-  });
-  
-  if (selectedTrack) {
-    drawTrackEvents(ctx, selectedTrack, noteHeight, canvas.width / dpr, true);
-  }
-  
-  renderPianoKeys();
-}
-
-function drawTrackEvents(ctx, track, noteHeight, canvasWidth, isSelected) {
-  const opacity = isSelected ? 1.0 : 0.4;
-  const originalGlobalAlpha = ctx.globalAlpha;
-  ctx.globalAlpha = opacity;
-  
-  if (!track.events) return;
-  
-  track.events.forEach(event => {
-    if (event.type === 'rest') {
-      const x = event.start * pianoRollState.timeScale;
-      const width = event.duration * pianoRollState.timeScale;
-      ctx.fillStyle = '#888';
-      ctx.fillRect(x, 0, width, 145 * noteHeight);
-    } else if (event.notes && event.notes.length > 0) {
-      event.notes.forEach(note => {
-        if (note.pitchName === 'null') return;
-        
-        const x = event.start * pianoRollState.timeScale;
-        const width = event.duration * pianoRollState.timeScale;
-        const y = (144 - note.midi) * noteHeight;
-        
-        ctx.fillStyle = track.color;
-        ctx.fillRect(x, y, width, noteHeight - 1);
-        
-        if (isSelected && pianoRollState.selectedNoteIds.has(note.id)) {
-          ctx.strokeStyle = '#fff';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(x, y, width, noteHeight - 1);
-        }
-      });
-    }
-  });
-  
-  ctx.globalAlpha = originalGlobalAlpha;
-}
-
-function renderPianoKeys() {
-  el.pianoKeys.innerHTML = '';
-  
-  for (let midi = 144; midi >= 0; midi--) {
-    const name = midiToNoteName(midi);
-    const div = document.createElement('div');
-    div.className = 'piano-key';
-    div.style.height = pianoRollState.noteHeight + 'px';
-    div.textContent = name;
-    el.pianoKeys.appendChild(div);
-  }
-}
-
-// ===== PIANO ROLL CANVAS EVENTS =====
-
-function onCanvasPointerDown(e) {
-  if (playbackState.playing) return;
-  
-  const rect = el.pianoRollCanvas.getBoundingClientRect();
-  const x = (e.clientX - rect.left) / (rect.width / (el.pianoRollCanvas.width / (window.devicePixelRatio || 1)));
-  const y = (e.clientY - rect.top) / (rect.height / (el.pianoRollCanvas.height / (window.devicePixelRatio || 1)));
-  
-  pianoRollState.isDragging = true;
-  pianoRollState.dragStartPos = { x, y };
-  
-  const selectedTrack = Project.tracks.find(t => t.id === selectedTrackIdInPianoRoll);
-  if (!selectedTrack) return;
-  
-  if (pianoRollState.mode === 'pencil') {
-    const beats = x / pianoRollState.timeScale;
-    const midi = 144 - Math.floor(y / pianoRollState.noteHeight);
-    
-    if (midi >= 0 && midi <= 144) {
-      const note = {
-        id: uid('note'),
-        pitchName: midiToNoteName(midi),
-        midi,
-        cents: 0,
-        slur: false,
-        keyBypass: false,
-        lyric: null
-      };
-      
-      const lenBeats = parseLengthToBeats(el.inputLength.value);
-      
-      const existingConflict = checkNoteConflict(selectedTrack, beats, lenBeats, midi);
-      if (!existingConflict) {
-        pushUndoState();
-        
-        const event = {
-          id: uid('ev'),
-          type: 'note',
-          instrument: selectedTrack.instrument,
-          start: beats,
-          duration: lenBeats,
-          notes: [note],
-          className: selectedTrack.name,
-          trackId: selectedTrack.id,
-          line: 0
-        };
-        
-        selectedTrack.events.push(event);
-        markPianoRollAsModified();
-        drawPianoRoll();
-        log('Piano Roll: Added ' + note.pitchName, 'success');
-      } else {
-        log('Piano Roll: Note conflict detected', 'error');
-      }
-    }
-  } else if (pianoRollState.mode === 'eraser') {
-    const note = hitTestNote(selectedTrack.events, x, y);
-    if (note) {
-      pushUndoState();
-      const event = selectedTrack.events.find(e => e.notes.includes(note));
-      if (event) {
-        event.notes = event.notes.filter(n => n !== note);
-        if (event.notes.length === 0) {
-          selectedTrack.events = selectedTrack.events.filter(e => e !== event);
-        }
-      }
-      markPianoRollAsModified();
-      drawPianoRoll();
-      log('Piano Roll: Deleted note', 'success');
-    }
-  } else if (pianoRollState.mode === 'select') {
-    const note = hitTestNote(selectedTrack.events, x, y);
-    if (note) {
-      pianoRollState.selectedNoteIds.clear();
-      pianoRollState.selectedNoteIds.add(note.id);
-      drawPianoRoll();
-    }
-  }
-}
-
-function onCanvasPointerMove(e) {
-  if (!pianoRollState.isDragging) return;
-}
-
-function onCanvasPointerUp(e) {
-  pianoRollState.isDragging = false;
-}
-
-function onCanvasDblClick(e) {
-  const rect = el.pianoRollCanvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-  const x = (e.clientX - rect.left) / (rect.width / (el.pianoRollCanvas.width / dpr));
-  const y = (e.clientY - rect.top) / (rect.height / (el.pianoRollCanvas.height / dpr));
-  
-  const selectedTrack = Project.tracks.find(t => t.id === selectedTrackIdInPianoRoll);
-  if (!selectedTrack) return;
-  
-  const note = hitTestNote(selectedTrack.events, x, y);
-  if (!note) return;
-  
-  showNotePropsModal(note);
-}
-
-function checkNoteConflict(track, startBeat, durationBeats, midi) {
-  for (let event of track.events) {
-    if (event.type === 'rest') continue;
-    
-    for (let note of (event.notes || [])) {
-      if (note.midi === midi) {
-        const eventEnd = event.start + event.duration;
-        const newEnd = startBeat + durationBeats;
-        
-        if ((startBeat >= event.start && startBeat < eventEnd) ||
-            (newEnd > event.start && newEnd <= eventEnd) ||
-            (startBeat <= event.start && newEnd >= eventEnd)) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-}
-
-function hitTestNote(events, x, y) {
-  for (let event of events) {
-    if (event.type === 'rest') continue;
-    
-    for (let note of (event.notes || [])) {
-      if (note.pitchName === 'null') continue;
-      
-      const nx = event.start * pianoRollState.timeScale;
-      const nwidth = event.duration * pianoRollState.timeScale;
-      const ny = (144 - note.midi) * pianoRollState.noteHeight;
-      const nheight = pianoRollState.noteHeight;
-      
-      if (x >= nx && x < nx + nwidth && y >= ny && y < ny + nheight) {
-        if (!note.id) note.id = uid('note');
-        return note;
-      }
-    }
-  }
-  return null;
-}
-
-function showNotePropsModal(note) {
-  if (!note.id) note.id = uid('note');
-  
-  el.propPitch.value = note.pitchName;
-  el.propMicrotone.value = note.cents;
-  el.propSlur.checked = note.slur || false;
-  el.propBypass.checked = note.keyBypass || false;
-  el.propLyric.value = note.lyric || '';
-  
-  el.propOk.onclick = () => {
-    note.pitchName = el.propPitch.value.trim();
-    note.cents = parseInt(el.propMicrotone.value);
-    note.slur = el.propSlur.checked;
-    note.keyBypass = el.propBypass.checked;
-    note.lyric = el.propLyric.value.trim();
-    
-    el.notePropsModal.classList.remove('active');
-    markPianoRollAsModified();
-    drawPianoRoll();
-  };
-  
-  el.notePropsModal.classList.add('active');
-}
-
-el.propCancel.addEventListener('click', () => el.notePropsModal.classList.remove('active'));
-
-function attachCanvasEvents() {
-  el.pianoRollCanvas.addEventListener('pointerdown', onCanvasPointerDown);
-  el.pianoRollCanvas.addEventListener('pointermove', onCanvasPointerMove);
-  el.pianoRollCanvas.addEventListener('pointerup', onCanvasPointerUp);
-  el.pianoRollCanvas.addEventListener('dblclick', onCanvasDblClick);
-}
-
-// ===== PLAYBACK =====
-
-function ensureAudioContext() {
-  if (!audioCtx) {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) {
-      log('Web Audio unsupported', 'error');
-      return null;
-    }
-    audioCtx = new AC();
-  }
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume().catch(() => {});
-  }
-  return audioCtx;
-}
-
-el.playBtn.addEventListener('click', () => {
-  if (playbackState.playing) return;
-  if (pianoRollState.isOpen) {
-    log('Cannot play while Piano Roll is open', 'error');
-    return;
-  }
-  
-  saveEditorToTrack();
-  
-  const code = Project.tracks.map(t => t.code).join('\n');
-  const events = compileCode(code);
-  
-  if (!events.length) {
-    log('No events', 'info');
-    return;
-  }
-  
-  const ac = ensureAudioContext();
-  if (!ac) return;
-  
-  stopPlayback(true);
-  
-  playbackState.playing = true;
-  playbackState.timers = [];
-  playbackState.nodes = [];
-  playbackState.tracks = {};
-  playbackState.cursorPos = 0;
-  
-  Project.tracks.forEach(t => {
-    playbackState.tracks[t.id] = { activeLines: new Set() };
-  });
-  
-  log(`Playing ${events.length} events`, 'info');
-  el.playBtn.disabled = true;
-  el.stopBtn.disabled = false;
-  
-  const offset = 0.05;
-  const base = ac.currentTime + offset;
-  
-  events.forEach(event => {
-    if (!event.notes || event.notes.length === 0) return;
-    
-    const startTime = base + event.start * 60 / Project.tempo;
-    const durSec = event.duration * 60 / Project.tempo;
-    const endTime = startTime + durSec;
-    
-    event.notes.forEach(noteObj => {
-      if (!noteObj || noteObj.pitchName === 'null') return;
-      
-      try {
-        const midi = noteObj.midi;
-        const fq = 440.0 * Math.pow(2, (midi - 69) / 12) * Math.pow(2, noteObj.cents / 1200);
-        
-        const osc = ac.createOscillator();
-        const gain = ac.createGain();
-        
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(fq, startTime);
-        
-        const attack = Math.min(0.02, durSec * 0.15);
-        const release = Math.min(0.1, durSec * 0.25);
-        
-        gain.gain.setValueAtTime(0, startTime);
-        gain.gain.linearRampToValueAtTime(0.25, startTime + attack);
-        gain.gain.setValueAtTime(0.25, endTime - release);
-        gain.gain.linearRampToValueAtTime(0, endTime);
-        
-        osc.connect(gain);
-        gain.connect(ac.destination);
-        
-        osc.start(startTime);
-        osc.stop(endTime + 0.02);
-        
-        playbackState.nodes.push({ osc, gain });
-      } catch (e) {}
-    });
-    
-    if (!event.trackId) return;
-    
-    const msStart = Math.max(0, Math.round((startTime - ac.currentTime) * 1000));
-    const timer1 = setTimeout(() => {
-      if (!playbackState.playing) return;
-      const state = playbackState.tracks[event.trackId];
-      if (state) {
-        state.activeLines.add(event.line);
-        renderTrackList();
-        updateHighlight();
-      }
-    }, msStart);
-    playbackState.timers.push(timer1);
-    
-    const msEnd = Math.max(0, Math.round((endTime - ac.currentTime) * 1000));
-    const timer2 = setTimeout(() => {
-      if (!playbackState.playing) return;
-      const state = playbackState.tracks[event.trackId];
-      if (state) {
-        state.activeLines.delete(event.line);
-        renderTrackList();
-        updateHighlight();
-      }
-    }, msEnd + 10);
-    playbackState.timers.push(timer2);
-  });
-  
-  const maxEnd = events.reduce((m, e) => Math.max(m, e.start + e.duration), 0);
-  const maxSec = maxEnd * 60 / Project.tempo;
-  const stopTimer = setTimeout(() => {
-    if (playbackState.playing) {
-      log('Playback finished', 'info');
-      stopPlayback(true);
-    }
-  }, Math.round((maxSec + offset) * 1000) + 300);
-  playbackState.timers.push(stopTimer);
-  
-  renderTrackList();
-  updateHighlight();
-});
-
-el.stopBtn.addEventListener('click', () => stopPlayback(false));
-
-function stopPlayback(internal = false) {
-  playbackState.playing = false;
-  
-  playbackState.timers.forEach(id => clearTimeout(id));
-  playbackState.timers = [];
-  
-  playbackState.nodes.forEach(({ osc, gain }) => {
-    try { osc.stop(); osc.disconnect(); gain.disconnect(); } catch (e) {}
-  });
-  playbackState.nodes = [];
-  
-  Object.values(playbackState.tracks || {}).forEach(state => {
-    state.activeLines.clear();
-  });
-  
-  if (playbackState.cursorUpdateInterval) {
-    clearInterval(playbackState.cursorUpdateInterval);
-    playbackState.cursorUpdateInterval = null;
-  }
-  
-  renderTrackList();
-  updateHighlight();
-  
-  el.playBtn.disabled = false;
-  el.stopBtn.disabled = true;
-  
-  if (!internal) log('Stopped', 'info');
-}
-
-// ===== EXPORT =====
-
-el.exportWavBtn.addEventListener('click', () => {
-  saveEditorToTrack();
-  const code = Project.tracks.map(t => t.code).join('\n');
-  const events = compileCode(code);
-  
-  if (!events.length) {
-    log('No events', 'error');
-    return;
-  }
-  
-  try {
-    log('Rendering WAV...', 'info');
-    const sampleRate = 44100;
-    const maxEnd = events.reduce((m, e) => Math.max(m, e.start + e.duration), 0);
-    const totalSamples = Math.floor(maxEnd * sampleRate * 60 / Project.tempo) + 1;
-    const buffer = new Float32Array(totalSamples);
-    
-    events.forEach(ev => {
-      if (!ev.notes || ev.notes.length === 0) return;
-      
-      const startSample = Math.floor(ev.start * 60 / Project.tempo * sampleRate);
-      const durSamples = Math.floor(ev.duration * 60 / Project.tempo * sampleRate);
-      
-      ev.notes.forEach(note => {
-        if (!note || note.pitchName === 'null') return;
-        
-        const fq = 440.0 * Math.pow(2, (note.midi - 69) / 12) * Math.pow(2, note.cents / 1200);
-        
-        for (let i = 0; i < durSamples; i++) {
-          const idx = startSample + i;
-          if (idx >= totalSamples) break;
-          
-          const t = i / sampleRate;
-          const wave = Math.sin(2 * Math.PI * fq * t);
-          const env = Math.min(1, t * 100) * Math.max(0, 1 - (t - ev.duration * 60 / Project.tempo + 0.1) * 10);
-          buffer[idx] += wave * env * 0.15;
-        }
-      });
-    });
-    
-    let peak = 0;
-    for (let i = 0; i < buffer.length; i++) {
-      if (Math.abs(buffer[i]) > peak) peak = Math.abs(buffer[i]);
-    }
-    
-    if (peak > 0.95) {
-      const scale = 0.95 / peak;
-      for (let i = 0; i < buffer.length; i++) buffer[i] *= scale;
-    }
-    
-    const audioData = new Int16Array(totalSamples);
-    for (let i = 0; i < totalSamples; i++) {
-      let s = Math.max(-1, Math.min(1, buffer[i]));
-      audioData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-    }
-    
-    const headerBuffer = new ArrayBuffer(44);
-    const header = new DataView(headerBuffer);
-    
-    header.setUint32(0, 0x52494646, true);
-    header.setUint32(4, 36 + totalSamples * 2, true);
-    header.setUint32(8, 0x57415645, true);
-    header.setUint32(12, 0x666d7420, true);
-    header.setUint32(16, 16, true);
-    header.setUint16(20, 1, true);
-    header.setUint16(22, 1, true);
-    header.setUint32(24, sampleRate, true);
-    header.setUint32(28, sampleRate * 2, true);
-    header.setUint16(32, 2, true);
-    header.setUint16(34, 16, true);
-    header.setUint32(36, 0x64617461, true);
-    header.setUint32(40, totalSamples * 2, true);
-    
-    const blob = new Blob([headerBuffer, audioData], { type: 'audio/wav' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sws-${Date.now()}.wav`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    log('WAV exported', 'success');
-  } catch (err) {
-    log(`Export error: ${err.message}`, 'error');
-  }
-});
-
-el.exportMidiBtn.addEventListener('click', () => {
-  log('MIDI export: coming soon', 'info');
-});
-
-el.exportSsBtn.addEventListener('click', () => {
-  saveEditorToTrack();
-  const ss = serializeProjectToSS();
-  const blob = new Blob([ss], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'export.ss';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  log('SS exported', 'success');
-});
-
-// ===== PLUGIN =====
-
-el.soundPluginBtn.addEventListener('click', () => {
-  el.soundPluginModal.classList.add('active');
-  updateSoundList();
-});
-
-el.soundPluginClose.addEventListener('click', () => el.soundPluginModal.classList.remove('active'));
-
-el.loadPluginBtn.addEventListener('click', () => el.pluginFileInput.click());
-
-el.pluginFileInput.addEventListener('change', (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    try {
-      const code = ev.target.result;
-      const func = new Function('SWS', code);
-      func({
-        plugin: (def) => {
-          if (def.sounds) {
-            Object.keys(def.sounds).forEach(name => {
-              Project.pluginSounds.add(name.toLowerCase());
-              VALID_INSTRUMENTS.add(name.toLowerCase());
-            });
-          }
-        }
-      });
-      log('Plugin loaded', 'success');
-      updateHighlight();
-      updateSoundList();
-    } catch (err) {
-      log(`Plugin error: ${err.message}`, 'error');
-    }
-  };
-  reader.readAsText(file);
-  el.pluginFileInput.value = '';
-});
-
-function updateSoundList() {
-  let html = '<div style="font-size:11px;">';
-  html += '<div style="color:var(--syntax-blue);margin-bottom:5px;">Standard:</div>';
-  const standard = Array.from(VALID_INSTRUMENTS).filter(s => !Project.pluginSounds.has(s)).sort();
-  standard.forEach(s => {
-    html += `<div style="margin:2px 0;">✓ ${escapeHtml(s)}</div>`;
-  });
-  
-  if (Project.pluginSounds.size > 0) {
-    html += '<div style="color:var(--syntax-orange);margin-top:10px;margin-bottom:5px;">Plugin:</div>';
-    Array.from(Project.pluginSounds).sort().forEach(s => {
-      html += `<div style="margin:2px 0;color:var(--syntax-orange);">✓ ${escapeHtml(s)}</div>`;
-    });
-  }
-  
-  html += '</div>';
-  el.soundList.innerHTML = html;
-}
-
-// ===== BACKUP & RESTORE =====
-
-function saveBackup() {
-  if (!pianoRollState.isOpen) return;
-  
-  const backup = {
-    timestamp: Date.now(),
-    project: JSON.parse(JSON.stringify(Project)),
-    pianoRollState: {
-      hasUnappliedChanges: pianoRollState.hasUnappliedChanges,
-      selectedTrackIdInPianoRoll: selectedTrackIdInPianoRoll
-    }
-  };
-  
-  localStorage.setItem('sws-piano-roll-backup', JSON.stringify(backup));
-}
-
-function checkBackup() {
-  const backupStr = localStorage.getItem('sws-piano-roll-backup');
-  if (!backupStr) return;
-  
-  try {
-    const backup = JSON.parse(backupStr);
-    el.backupRestoreBtn.onclick = () => {
-      Project.tempo = backup.project.tempo;
-      Project.key = backup.project.key;
-      Project.timeSignature = backup.project.timeSignature;
-      Project.tracks = backup.project.tracks;
-      Project.tempoMap = backup.project.tempoMap;
-      Project.pluginSounds = new Set(backup.project.pluginSounds);
-      
-      selectedTrackIdInPianoRoll = backup.pianoRollState.selectedTrackIdInPianoRoll;
-      pianoRollState.hasUnappliedChanges = backup.pianoRollState.hasUnappliedChanges;
-      
-      localStorage.removeItem('sws-piano-roll-backup');
-      el.backupModal.classList.remove('active');
-      
-      renderTabs();
-      renderTrackList();
-      log('Backup restored', 'success');
-    };
-    
-    el.backupDiscardBtn.onclick = () => {
-      localStorage.removeItem('sws-piano-roll-backup');
-      el.backupModal.classList.remove('active');
-    };
-    
-    el.backupModal.classList.add('active');
-  } catch (e) {
-    localStorage.removeItem('sws-piano-roll-backup');
-  }
-}
-
-setInterval(() => {
-  if (pianoRollState.isOpen) {
-    saveBackup();
-  }
-}, 5000);
-
-// ===== INITIALIZATION =====
-
-window.addEventListener('load', () => {
-  initTheme();
-  
-  Project.tracks = [];
-  const mainTrack = createTrack('main');
-  mainTrack.code = `tempoconst="120";\nkey="C";\n\nsnd("piano",4,C4);\nsnd("piano",4,E4);\nsnd("piano",4,G4);\n`;
-  selectTrack(mainTrack.id);
-  
-  checkBackup();
-  
-  setInterval(() => {
-    el.projectInfo.textContent = `tempo=${Project.tempo} key=${Project.key}`;
-  }, 500);
-  
-  log('SWS v0.3 ready', 'info');
-  updateSoundList();
-});
+  /*
+   * Part 1:
+   * HTML / CSS / UI DOM structure only.
+   *
+   * Parser、Compiler、Event Model、Piano Roll操作ロジック、
+   * Playback、MIDI、WAV、UST、PluginなどのJavaScriptは
+   * 後続Partで追加する。
+   */
 </script>
 
 </body>
